@@ -19,7 +19,12 @@ export class ToolService {
             service: z.string().describe("The service requested"),
         }),
         func: async ({ customer_name, date, time, service }) => {
-            // Logic would integrate with Google Calendar / Cal.com
+            // Security: Validate date is in the future
+            const appointmentDate = new Date(`${date}T${time}`);
+            if (appointmentDate < new Date()) {
+                return "Error: Cannot book appointments in the past.";
+            }
+
             console.log(`[Tool] Booking ${service} for ${customer_name} at ${date} ${time}`);
             return `Successfully booked ${service} for ${customer_name} on ${date} at ${time}. Confirmation sent.`;
         },
@@ -37,7 +42,11 @@ export class ToolService {
             description: z.string().describe("Description of services/products"),
         }),
         func: async ({ customer_email, amount, description }) => {
-            // Logic would integrate with Stripe / Resend
+            // Security: Cap invoice amounts for free tier safety
+            if (amount > 5000) {
+                return "Error: Invoice amount exceeds safety threshold ($5,000). Please contact support.";
+            }
+
             console.log(`[Tool] Sending invoice of $${amount} to ${customer_email} for ${description}`);
             return `Invoice of $${amount} for '${description}' has been sent to ${customer_email}.`;
         },

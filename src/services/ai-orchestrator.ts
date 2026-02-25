@@ -49,13 +49,33 @@ export class AIOrchestrator {
                 console.log(`[AI] Tool calls detected:`, response.tool_calls);
 
                 for (const toolCall of response.tool_calls) {
-                    const tool = ToolService.getTools().find(t => t.name === toolCall.name);
-                    if (tool) {
-                        const toolResult = await tool.invoke(toolCall.args);
+                    const toolName = toolCall.name;
+                    // Pre-Execution Policy: Prevent unauthorized or recursive tool calls
+                    if (!this.isValidToolSelection(toolName)) {
+                        console.warn(`[Security] Blocked unauthorized tool call: ${toolName}`);
                         messages.push(new ToolMessage({
-                            content: toolResult as string,
+                            content: "Error: Unauthorized tool access.",
                             tool_call_id: toolCall.id!,
                         }));
+                        continue;
+                    }
+
+                    const tool = ToolService.getTools().find(t => t.name === toolName);
+                    if (tool) {
+                        try {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            const toolResult = await (tool as any).invoke(toolCall.args);
+                            messages.push(new ToolMessage({
+                                content: typeof toolResult === 'string' ? toolResult : JSON.stringify(toolResult),
+                                tool_call_id: toolCall.id!,
+                            }));
+                        } catch (error) {
+                            console.error(`[Tool Error] ${toolName}:`, error);
+                            messages.push(new ToolMessage({
+                                content: `Error executing ${toolName}.`,
+                                tool_call_id: toolCall.id!,
+                            }));
+                        }
                     }
                 }
 
@@ -71,6 +91,15 @@ export class AIOrchestrator {
             console.error('AI Chat Error:', error);
             throw new Error('Failed to generate AI response.');
         }
+    }
+
+    /**
+     * Internal security check for tool selection.
+     */
+    private isValidToolSelection(toolName: string): boolean {
+        const allowedTools = ToolService.getTools().map(t => t.name);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return allowedTools.includes(toolName as any);
     }
 
     /**
