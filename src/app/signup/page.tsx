@@ -46,12 +46,6 @@ export default function SignupPage() {
 
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-zinc-300 ml-1">Business Name</label>
-                        <div className="relative group">
-                            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-purple-400 transition-colors" />
-                            className="w-full bg-[#111] border border-white/10 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all text-sm"
-                            required
-                            />
-                        </div>
                     </div>
 
                     <div className="space-y-2">
