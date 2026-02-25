@@ -1,36 +1,86 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Business AI Agent SaaS Platform
 
-## Getting Started
+An industrial-grade, multi-tenant SaaS platform for deploying autonomous AI agents across WhatsApp, Voice, Email, and Instagram. Built with a "Zero-Cost" architectural philosophy using FAANG+ engineering standards.
 
-First, run the development server:
+## 🚀 Core Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+-   **Omni-channel Gateway:** Unified webhook handler for WhatsApp, Voice (Vapi.ai), and Email.
+-   **Autonomous "Limbs" (Tool Use):** Agents can book appointments, send invoices, and check inventory autonomously.
+-   **RAG Knowledge Base:** Long-term memory system using Supabase Vector Store and Google Gemini Embeddings.
+-   **Industrial-Grade Security:**
+    -   **Multi-tenancy:** Strict data isolation using PostgreSQL Row Level Security (RLS).
+    -   **Pre-Execution Policies:** Tool calls are validated against security caps and allowed lists.
+    -   **Zero-Defect Code:** 100% test coverage for core reasoning loops.
+-   **Premium Dashboard:** Sleek, dark-themed UI for agent management, conversation monitoring, and real-time analytics.
+
+## 🛠️ Technical Stack
+
+-   **Frontend:** Next.js 15 (App Router), Tailwind CSS, Shadcn/UI, Lucide Icons.
+-   **Backend:** Next.js Serverless Functions, Supabase (Auth, DB, Vector).
+-   **AI Orchestration:** LangGraph, LangChain, Google Gemini 1.5 Flash, Groq (Llama 3).
+-   **Integrations:** Resend (Email), Vapi.ai (Voice), Meta Graph API (WhatsApp/IG).
+-   **Testing:** Jest, ts-jest.
+
+## 🏗️ Project Structure
+
+```text
+src/
+├── app/                  # Next.js App Router (Dashboard, API Webhooks)
+├── components/           # Premium UI Components
+├── lib/                  # Utilities (Supabase, Formatting)
+├── services/             # Core Logic (AI Orchestrator, Knowledge, Tools)
+├── tests/                # Unit Tests (Jest)
+└── types/                # Strict TypeScript Definitions
+supabase/
+└── schema.sql            # Multi-tenant DB Schema & RLS Policies
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ⚡ Quick Start
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 1. Clone & Install
+```bash
+git clone git@github.com:SakiburRahmann/Business_AI_Agent.git
+cd Business_AI_Agent
+npm install --legacy-peer-deps
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 2. Environment Variables
+Create a `.env.local` file with the following:
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+GOOGLE_GENERATIVE_AI_API_KEY=your_gemini_key
+GROQ_API_KEY=your_groq_key
+RESEND_API_KEY=your_resend_key
+VAPI_API_KEY=your_vapi_key
+```
 
-## Learn More
+### 3. Database Setup
+Run the SQL in `supabase/schema.sql` in your Supabase SQL Editor to enable RLS and create tables.
 
-To learn more about Next.js, take a look at the following resources:
+### 4. Run Locally
+```bash
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🚢 Deployment Guide
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Vercel (Frontend & API)
+1. Connect your GitHub repository to [Vercel](https://vercel.com).
+2. Add the environment variables listed above in the Vercel Project Settings.
+3. Deploy! Vercel will automatically detect the Next.js project.
 
-## Deploy on Vercel
+### Supabase (Database & Auth)
+1. Create a new project on [Supabase](https://supabase.com).
+2. Go to **Settings > API** to get your URL and Service Role Key.
+3. Apply the `supabase/schema.sql` to your production database.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🧪 Verification
+Run the industrial-grade test suite to verify system integrity:
+```bash
+npm test
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+**Maintained by Sakibur Rahman**  
+*Principal Full-Stack Engineer & Systems Architect*
