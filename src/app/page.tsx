@@ -24,7 +24,7 @@ export default function LandingPage() {
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
               <BrainCircuit className="w-6 h-6 text-white" />
             </div>
-            <span className="text-xl font-bold tracking-tight">Antigravity AI</span>
+            <span className="text-xl font-bold tracking-tight">OmniiAi</span>
           </div>
 
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
@@ -134,7 +134,7 @@ export default function LandingPage() {
             <div>
               <h2 className="text-4xl md:text-5xl font-bold mb-8">Equipped with <span className="text-purple-500">Limbs</span>.</h2>
               <p className="text-zinc-400 text-lg mb-12">
-                Antigravity agents are connected to tools that allow them to perform real-world tasks instantly.
+                OmniiAi agents are connected to tools that allow them to perform real-world tasks instantly.
               </p>
 
               <div className="space-y-6">
@@ -195,7 +195,7 @@ export default function LandingPage() {
           <div className="flex flex-col items-center md:items-start gap-4">
             <div className="flex items-center gap-3">
               <BrainCircuit className="w-6 h-6 text-purple-500" />
-              <span className="text-xl font-bold tracking-tight">Antigravity AI</span>
+              <span className="text-xl font-bold tracking-tight">OmniiAi</span>
             </div>
             <p className="text-zinc-500 text-sm max-w-xs text-center md:text-left">
               The world&apos;s most powerful autonomous agent platform for modern businesses.
