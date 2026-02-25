@@ -2,18 +2,81 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { BrainCircuit, Mail, Eye, EyeOff, Loader2, User, Building2 } from 'lucide-react';
+import { BrainCircuit, Mail, Eye, EyeOff, Loader2, User, Building2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { createClient } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 export default function SignupPage() {
+    const router = useRouter();
     const [isLoading, setIsLoading] = React.useState(false);
     const [showPassword, setShowPassword] = React.useState(false);
+    const [fullName, setFullName] = React.useState('');
+    const [businessName, setBusinessName] = React.useState('');
+    const [email, setEmail] = React.useState('');
+    const [password, setPassword] = React.useState('');
+    const [error, setError] = React.useState<string | null>(null);
+    const [isSuccess, setIsSuccess] = React.useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-        // Simulate auth logic
-        setTimeout(() => setIsLoading(false), 2000);
+        setError(null);
+
+        try {
+            const supabase = createClient();
+
+            const { data, error: authError } = await supabase.auth.signUp({
+                email,
+                password,
+                options: {
+                    data: {
+                        full_name: fullName,
+                        business_name: businessName,
+                    },
+                    emailRedirectTo: `${window.location.origin}/auth/callback`,
+                },
+            });
+
+            if (authError) {
+                setError(authError.message);
+                return;
+            }
+
+            if (data.user) {
+                setIsSuccess(true);
+                // In a real scenario, we might wait for email confirmation or auto-login
+                // For now, we show success and redirect after a delay
+                setTimeout(() => {
+                    router.push('/login');
+                }, 3000);
+            }
+        } catch (err: any) {
+            setError('An unexpected error occurred. Please try again.');
+            console.error('Signup error:', err);
+        } finally {
+            setIsLoading(false);
+        }
     };
+
+    if (isSuccess) {
+        return (
+            <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+                <div className="w-full max-w-[440px] relative z-10 bg-white/[0.02] border border-white/5 p-12 rounded-[32px] backdrop-blur-md text-center">
+                    <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6">
+                        <CheckCircle2 className="w-8 h-8 text-green-500" />
+                    </div>
+                    <h1 className="text-3xl font-bold mb-4">Check your email</h1>
+                    <p className="text-zinc-400 leading-relaxed mb-8">
+                        We&apos;ve sent a confirmation link to <span className="text-white font-medium">{email}</span>.
+                        Please verify your account to continue.
+                    </p>
+                    <Link href="/login" className="text-purple-400 hover:text-purple-300 font-medium">
+                        Return to login
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
@@ -37,6 +100,8 @@ export default function SignupPage() {
                             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-purple-400 transition-colors" />
                             <input
                                 type="text"
+                                value={fullName}
+                                onChange={(e) => setFullName(e.target.value)}
                                 placeholder="Sakibur Rahman"
                                 className="w-full bg-[#111] border border-white/10 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all text-sm"
                                 required
@@ -50,6 +115,8 @@ export default function SignupPage() {
                             <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-purple-400 transition-colors" />
                             <input
                                 type="text"
+                                value={businessName}
+                                onChange={(e) => setBusinessName(e.target.value)}
                                 placeholder="OmniiAi Solutions"
                                 className="w-full bg-[#111] border border-white/10 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all text-sm"
                                 required
@@ -63,6 +130,8 @@ export default function SignupPage() {
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-purple-400 transition-colors" />
                             <input
                                 type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 placeholder="name@company.com"
                                 className="w-full bg-[#111] border border-white/10 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all text-sm"
                                 required
@@ -82,12 +151,21 @@ export default function SignupPage() {
                             </button>
                             <input
                                 type={showPassword ? "text" : "password"}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
                                 className="w-full bg-[#111] border border-white/10 rounded-xl py-3 px-4 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all text-sm"
                                 required
                             />
                         </div>
                     </div>
+
+                    {error && (
+                        <div className="flex items-center gap-2 text-red-400 text-xs bg-red-400/10 p-3 rounded-lg border border-red-400/20">
+                            <AlertCircle className="w-4 h-4" />
+                            <span>{error}</span>
+                        </div>
+                    )}
 
                     <div className="pt-2">
                         <button

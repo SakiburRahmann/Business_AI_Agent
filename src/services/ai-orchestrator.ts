@@ -6,7 +6,7 @@ import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { BaseMessage, SystemMessage, AIMessage, ToolMessage } from '@langchain/core/messages';
 
 /**
- * AIOrchestrator: The central reasoning engine for the Business AI Agent platform.
+ * AIOrchestrator: The central reasoning engine for the OmniiAi platform.
  * Supports multiple LLM providers and autonomous tool-use.
  */
 export class AIOrchestrator {
@@ -15,13 +15,13 @@ export class AIOrchestrator {
     constructor(provider: 'google' | 'groq' = 'google') {
         if (provider === 'google') {
             this.model = new ChatGoogleGenerativeAI({
-                model: 'gemini-1.5-flash',
+                model: 'gemini-2.0-flash',
                 maxOutputTokens: 2048,
                 apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
             }).bindTools(ToolService.getTools()) as unknown as BaseChatModel;
         } else {
             this.model = new ChatGroq({
-                model: 'llama-3.1-70b-versatile',
+                model: 'llama-3.3-70b-versatile',
                 apiKey: process.env.GROQ_API_KEY,
             }).bindTools(ToolService.getTools()) as unknown as BaseChatModel;
         }
@@ -29,8 +29,6 @@ export class AIOrchestrator {
 
     /**
      * Processes a conversation turn with autonomous tool execution.
-     * @param systemPrompt - Instructions for the agent.
-     * @param history - Conversation history.
      */
     async chatWithTools(systemPrompt: string, history: BaseMessage[]): Promise<string> {
         try {
@@ -50,7 +48,6 @@ export class AIOrchestrator {
 
                 for (const toolCall of response.tool_calls) {
                     const toolName = toolCall.name;
-                    // Pre-Execution Policy: Prevent unauthorized or recursive tool calls
                     if (!this.isValidToolSelection(toolName)) {
                         console.warn(`[Security] Blocked unauthorized tool call: ${toolName}`);
                         messages.push(new ToolMessage({
@@ -63,7 +60,6 @@ export class AIOrchestrator {
                     const tool = ToolService.getTools().find(t => t.name === toolName);
                     if (tool) {
                         try {
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const toolResult = await (tool as any).invoke(toolCall.args);
                             messages.push(new ToolMessage({
                                 content: typeof toolResult === 'string' ? toolResult : JSON.stringify(toolResult),
@@ -79,7 +75,6 @@ export class AIOrchestrator {
                     }
                 }
 
-                // Get a new response from the LLM after providing tool results
                 response = await this.model.invoke(messages);
                 messages.push(response);
                 iterations++;
@@ -93,25 +88,15 @@ export class AIOrchestrator {
         }
     }
 
-    /**
-     * Internal security check for tool selection.
-     */
     private isValidToolSelection(toolName: string): boolean {
         const allowedTools = ToolService.getTools().map(t => t.name);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return allowedTools.includes(toolName as any);
     }
 
-    /**
-     * Main chat entry point.
-     */
     async chat(systemPrompt: string, history: BaseMessage[]): Promise<string> {
         return this.chatWithTools(systemPrompt, history);
     }
 
-    /**
-     * Placeholder for complex workflow.
-     */
     async processWithTools(systemPrompt: string, history: BaseMessage[]) {
         const workflow = new StateGraph(MessagesAnnotation)
             .addNode('agent', async (state) => {
