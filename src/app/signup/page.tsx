@@ -19,7 +19,7 @@ export default function SignupPage() {
     // OTP State
     const [otp, setOtp] = React.useState('');
 
-    const [error, setError] = React.useState<string | null>(null);
+    const [error, setError] = React.useState<{ message: string; details?: string } | null>(null);
     const [isSuccess, setIsSuccess] = React.useState(false);
 
     const handleSignupSubmit = async (e: React.FormEvent) => {
@@ -27,11 +27,11 @@ export default function SignupPage() {
         setIsLoading(true);
         setError(null);
 
+        console.log(`[Auth] Attempting OTP signup for: ${email}`);
+
         try {
             const supabase = createClient();
 
-            // For pure OTP signup, we use signInWithOtp with shouldCreateUser: true (default)
-            // We pass business metadata here
             const { error: authError } = await supabase.auth.signInWithOtp({
                 email,
                 options: {
@@ -40,21 +40,25 @@ export default function SignupPage() {
                         full_name: fullName,
                         business_name: businessName,
                     },
-                    // Even if it sends a link, it will ALSO send a code if configured,
-                    // or we can just ignore the link and use the code.
                     emailRedirectTo: `${window.location.origin}/auth/callback`,
                 },
             });
 
             if (authError) {
-                setError(authError.message);
+                console.error('[Auth Error]:', authError);
+                // Detailed error for debugging (e.g. rate limits)
+                setError({
+                    message: authError.message,
+                    details: authError.status?.toString() === '429' ? 'Too many requests. Please wait a few minutes before trying again.' : undefined
+                });
                 return;
             }
 
+            console.log('[Auth] OTP sent successfully');
             setStep('otp');
         } catch (err: any) {
-            setError('An unexpected error occurred. Please try again.');
-            console.error('Signup error:', err);
+            console.error('[Unexpected Error]:', err);
+            setError({ message: 'An unexpected system error occurred.', details: err.message });
         } finally {
             setIsLoading(false);
         }
@@ -67,8 +71,6 @@ export default function SignupPage() {
 
         try {
             const supabase = createClient();
-            // type: 'email' or 'signup' depending on how it was sent. 
-            // For signInWithOtp, it's usually 'email' (magic link/otp)
             const { error: verifyError } = await supabase.auth.verifyOtp({
                 email,
                 token: otp,
@@ -76,7 +78,7 @@ export default function SignupPage() {
             });
 
             if (verifyError) {
-                setError(verifyError.message);
+                setError({ message: verifyError.message });
                 return;
             }
 
@@ -85,7 +87,7 @@ export default function SignupPage() {
                 router.push('/dashboard');
             }, 2000);
         } catch (err: any) {
-            setError('Failed to verify code. Please try again.');
+            setError({ message: 'Failed to verify code. Please try again.' });
             console.error('OTP error:', err);
         } finally {
             setIsLoading(false);
@@ -115,6 +117,11 @@ export default function SignupPage() {
             {/* Background Orbs */}
             <div className="absolute top-1/4 -right-1/4 w-[500px] h-[500px] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none" />
             <div className="absolute bottom-1/4 -left-1/4 w-[500px] h-[500px] bg-purple-600/10 blur-[120px] rounded-full pointer-events-none" />
+
+            {/* Build Identifier (for visual sync verification) */}
+            <div className="absolute top-4 right-4 text-[8px] text-zinc-800 pointer-events-none select-none">
+                BUILD_ID: ff7d50d_OTP_V2
+            </div>
 
             <div className="w-full max-w-[440px] relative z-10">
                 <div className="flex flex-col items-center mb-8 text-center">
@@ -179,9 +186,14 @@ export default function SignupPage() {
                         </div>
 
                         {error && (
-                            <div className="flex items-center gap-2 text-red-400 text-xs bg-red-400/10 p-3 rounded-lg border border-red-400/20">
-                                <AlertCircle className="w-4 h-4" />
-                                <span>{error}</span>
+                            <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-red-400 text-xs bg-red-400/10 p-3 rounded-lg border border-red-400/20">
+                                    <AlertCircle className="w-4 h-4" />
+                                    <span>{error.message}</span>
+                                </div>
+                                {error.details && (
+                                    <p className="text-[10px] text-zinc-500 ml-1">{error.details}</p>
+                                )}
                             </div>
                         )}
 
@@ -204,7 +216,6 @@ export default function SignupPage() {
 
                         <p className="text-[10px] text-zinc-500 text-center px-4 leading-relaxed">
                             No password required. We&apos;ll send a secure single-use code to your email.
-                            By signing up, you agree to our Terms of Service.
                         </p>
                     </form>
                 ) : (
@@ -233,7 +244,7 @@ export default function SignupPage() {
                         {error && (
                             <div className="flex items-center gap-2 text-red-400 text-xs bg-red-400/10 p-3 rounded-lg border border-red-400/20">
                                 <AlertCircle className="w-4 h-4" />
-                                <span>{error}</span>
+                                <span>{error.message}</span>
                             </div>
                         )}
 
