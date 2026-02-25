@@ -2,20 +2,51 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { BrainCircuit, Mail, Loader2, AlertCircle, ShieldCheck, ArrowRight, CheckCircle2 } from 'lucide-react';
+import { BrainCircuit, Mail, Loader2, Lock, Eye, EyeOff, AlertCircle, ArrowRight, ShieldCheck, Fingerprint } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = React.useState(false);
-    const [step, setStep] = React.useState<'email' | 'otp'>('email');
-    const [email, setEmail] = React.useState('');
-    const [otp, setOtp] = React.useState('');
-    const [error, setError] = React.useState<string | null>(null);
-    const [isSuccess, setIsSuccess] = React.useState(false);
+    const [method, setMethod] = React.useState<'password' | 'otp'>('password');
+    const [step, setStep] = React.useState<'entry' | 'verification'>('entry');
 
-    const handleEmailSubmit = async (e: React.FormEvent) => {
+    // Auth State
+    const [email, setEmail] = React.useState('');
+    const [password, setPassword] = React.useState('');
+    const [otp, setOtp] = React.useState('');
+    const [showPassword, setShowPassword] = React.useState(false);
+
+    // UI State
+    const [error, setError] = React.useState<{ message: string } | null>(null);
+
+    const handlePasswordLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const supabase = createClient();
+            const { error: authError } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+
+            if (authError) {
+                setError({ message: authError.message });
+                return;
+            }
+
+            router.push('/dashboard');
+        } catch (err: any) {
+            setError({ message: 'Authentication failed. Please try again.' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleOtpRequest = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setError(null);
@@ -26,18 +57,17 @@ export default function LoginPage() {
                 email,
                 options: {
                     emailRedirectTo: `${window.location.origin}/auth/callback`,
-                },
+                }
             });
 
             if (authError) {
-                setError(authError.message);
+                setError({ message: authError.message });
                 return;
             }
 
-            setStep('otp');
+            setStep('verification');
         } catch (err: any) {
-            setError('An unexpected error occurred. Please try again.');
-            console.error('Login error:', err);
+            setError({ message: 'Request failed. Use password login instead.' });
         } finally {
             setIsLoading(false);
         }
@@ -57,156 +87,186 @@ export default function LoginPage() {
             });
 
             if (verifyError) {
-                setError(verifyError.message);
+                setError({ message: verifyError.message });
                 return;
             }
 
-            setIsSuccess(true);
-            setTimeout(() => {
-                router.push('/dashboard');
-            }, 2000);
+            router.push('/dashboard');
         } catch (err: any) {
-            setError('Failed to verify code. Please try again.');
-            console.error('OTP error:', err);
+            setError({ message: 'Verification code expired or invalid.' });
         } finally {
             setIsLoading(false);
         }
     };
 
-    if (isSuccess) {
-        return (
-            <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
-                <div className="w-full max-w-[400px] relative z-10 bg-white/[0.02] border border-white/5 p-12 rounded-[32px] backdrop-blur-md text-center">
-                    <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6">
-                        <CheckCircle2 className="w-8 h-8 text-green-500" />
-                    </div>
-                    <h1 className="text-3xl font-bold mb-4">Welcome Back</h1>
-                    <p className="text-zinc-400 leading-relaxed mb-4">
-                        Identity verified successfully.
-                    </p>
-                    <Loader2 className="w-6 h-6 animate-spin text-purple-500 mx-auto" />
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
-            {/* Background Orbs */}
-            <div className="absolute top-1/4 -left-1/4 w-[500px] h-[500px] bg-purple-600/10 blur-[120px] rounded-full pointer-events-none" />
-            <div className="absolute bottom-1/4 -right-1/4 w-[500px] h-[500px] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none" />
+        <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center p-6 relative lg:p-12 overflow-hidden selection:bg-blue-500/30">
+            {/* Professional Background Architecture */}
+            <div className="absolute top-[-20%] left-[-10%] w-[700px] h-[700px] bg-blue-600/10 blur-[140px] rounded-full pointer-events-none opacity-40" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-600/10 blur-[140px] rounded-full pointer-events-none opacity-40" />
 
-            <div className="w-full max-w-[400px] relative z-10">
-                <div className="flex flex-col items-center mb-8 text-center">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center mb-4 shadow-lg shadow-purple-500/20">
-                        <BrainCircuit className="w-7 h-7 text-white" />
+            {/* Global Mesh */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
+
+            <div className="w-full max-w-[420px] relative z-10">
+                <div className="mb-10 text-center flex flex-col items-center animate-in fade-in duration-1000">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-500 flex items-center justify-center p-[1px] mb-8 shadow-3xl shadow-blue-500/20 group">
+                        <div className="w-full h-full bg-[#050505] rounded-[15px] flex items-center justify-center">
+                            <BrainCircuit className="w-9 h-9 text-white opacity-90 group-hover:scale-110 transition-transform duration-500" />
+                        </div>
                     </div>
-                    <h1 className="text-3xl font-bold tracking-tight">Login to OmniiAi</h1>
-                    <p className="text-zinc-400 mt-2 text-sm">
-                        {step === 'email'
-                            ? 'Enter your email to receive a secure login code'
-                            : `Verification code sent to ${email}`}
-                    </p>
+                    <h1 className="text-4xl font-black tracking-tight mb-3">Authorize Access</h1>
+                    <p className="text-zinc-500 font-medium text-sm">Secure entry to the OmniiAi Command Center.</p>
                 </div>
 
-                {step === 'email' ? (
-                    <form onSubmit={handleEmailSubmit} className="space-y-4 bg-white/[0.02] border border-white/5 p-8 rounded-[32px] backdrop-blur-md">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300 ml-1">Work Email</label>
-                            <div className="relative group">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-purple-400 transition-colors" />
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="name@company.com"
-                                    className="w-full bg-[#111] border border-white/10 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all text-sm"
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        {error && (
-                            <div className="flex items-center gap-2 text-red-400 text-xs bg-red-400/10 p-3 rounded-lg border border-red-400/20">
-                                <AlertCircle className="w-4 h-4" />
-                                <span>{error}</span>
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="bg-white/[0.01] border border-white/[0.05] p-1 shadow-2xl rounded-[44px] backdrop-blur-3xl overflow-hidden">
+                        {/* Tab Switcher */}
+                        {step === 'entry' && (
+                            <div className="flex p-2 gap-1 bg-white/[0.02] m-2 rounded-[32px] border border-white/[0.02]">
+                                <button
+                                    onClick={() => setMethod('password')}
+                                    className={`flex-1 py-3 rounded-[24px] text-xs font-black uppercase tracking-widest transition-all duration-300 ${method === 'password' ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}
+                                >
+                                    Password
+                                </button>
+                                <button
+                                    onClick={() => setMethod('otp')}
+                                    className={`flex-1 py-3 rounded-[24px] text-xs font-black uppercase tracking-widest transition-all duration-300 ${method === 'otp' ? 'bg-white text-black' : 'text-zinc-500 hover:text-white'}`}
+                                >
+                                    Login Code
+                                </button>
                             </div>
                         )}
 
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            className="w-full bg-white text-black font-semibold py-3.5 rounded-xl hover:bg-zinc-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 group"
-                        >
-                            {isLoading ? (
-                                <Loader2 className="w-4 h-4 animate-spin" />
+                        <div className="p-8 pt-6">
+                            {step === 'entry' ? (
+                                <form onSubmit={method === 'password' ? handlePasswordLogin : handleOtpRequest} className="space-y-5">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] ml-2">Secure Email</label>
+                                        <div className="relative group">
+                                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 group-focus-within:text-white transition-colors" />
+                                            <input
+                                                type="email"
+                                                value={email}
+                                                onChange={(e) => setEmail(e.target.value)}
+                                                placeholder="operative@omnii.ai"
+                                                className="w-full bg-[#080808] border border-white/[0.07] rounded-3xl py-4 pl-12 pr-4 outline-none focus:border-blue-500/40 focus:ring-8 focus:ring-blue-500/5 transition-all text-[15px] placeholder:text-zinc-800"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {method === 'password' && (
+                                        <div className="space-y-1.5">
+                                            <div className="flex justify-between items-center px-2">
+                                                <label className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em]">Keyphrase</label>
+                                                <Link href="#" className="text-[11px] text-zinc-600 hover:text-white transition-colors font-bold uppercase tracking-widest">Forgot?</Link>
+                                            </div>
+                                            <div className="relative group">
+                                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 group-focus-within:text-white transition-colors" />
+                                                <input
+                                                    type={showPassword ? "text" : "password"}
+                                                    value={password}
+                                                    onChange={(e) => setPassword(e.target.value)}
+                                                    placeholder="••••••••"
+                                                    className="w-full bg-[#080808] border border-white/[0.07] rounded-3xl py-4 pl-12 pr-12 outline-none focus:border-blue-500/40 focus:ring-8 focus:ring-blue-500/5 transition-all text-[15px] placeholder:text-zinc-800"
+                                                    required
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowPassword(!showPassword)}
+                                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-700 hover:text-zinc-400 transition-colors"
+                                                >
+                                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {error && (
+                                        <div className="flex items-center gap-3 text-red-400 text-xs bg-red-400/5 p-4 rounded-3xl border border-red-400/10 animate-in shake duration-500">
+                                            <AlertCircle className="w-4 h-4 shrink-0" />
+                                            <span className="font-bold tracking-tight">{error.message}</span>
+                                        </div>
+                                    )}
+
+                                    <button
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className="w-full bg-white text-black font-black py-4.5 rounded-3xl hover:bg-zinc-200 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-3 group tracking-tight"
+                                    >
+                                        {isLoading ? (
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                        ) : (
+                                            <>
+                                                {method === 'password' ? 'Authenticate' : 'Request Access Code'}
+                                                <ArrowRight className="w-5 h-5 group-hover:translate-x-1.5 transition-transform duration-500" />
+                                            </>
+                                        )}
+                                    </button>
+                                </form>
                             ) : (
-                                <>
-                                    Send Login Code
-                                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                </>
+                                <form onSubmit={handleVerifyOtp} className="space-y-8 animate-in zoom-in-95 duration-500">
+                                    <div className="flex justify-center">
+                                        <div className="w-20 h-20 rounded-[32px] bg-blue-500/5 flex items-center justify-center ring-1 ring-blue-500/20 shadow-2xl shadow-blue-500/10">
+                                            <Fingerprint className="w-10 h-10 text-blue-500" />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3 text-center">
+                                        <label className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.3em] block">Handshake Code</label>
+                                        <input
+                                            type="text"
+                                            maxLength={6}
+                                            value={otp}
+                                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                                            placeholder="000000"
+                                            className="w-full bg-[#080808] border border-white/[0.07] rounded-3xl py-5 text-center text-3xl font-black tracking-[0.6em] outline-none focus:border-blue-500/50 focus:ring-8 focus:ring-blue-500/5 transition-all"
+                                            required
+                                            autoFocus
+                                        />
+                                        <p className="text-[11px] text-zinc-600 font-bold uppercase tracking-widest">Code dispatched to encrypted mail.</p>
+                                    </div>
+
+                                    {error && (
+                                        <div className="flex items-center gap-3 text-red-400 text-xs bg-red-400/5 p-4 rounded-3xl border border-red-400/10">
+                                            <AlertCircle className="w-4 h-4 shrink-0" />
+                                            <span className="font-bold">{error.message}</span>
+                                        </div>
+                                    )}
+
+                                    <button
+                                        type="submit"
+                                        disabled={isLoading || otp.length !== 6}
+                                        className="w-full bg-white text-black font-black py-4.5 rounded-3xl hover:bg-zinc-200 active:scale-[0.98] transition-all duration-300 disabled:opacity-20"
+                                    >
+                                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify Identity"}
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setStep('entry')}
+                                        className="w-full text-[11px] text-zinc-500 hover:text-white transition-colors font-bold uppercase tracking-[0.2em]"
+                                    >
+                                        Back to Entry
+                                    </button>
+                                </form>
                             )}
-                        </button>
-                    </form>
-                ) : (
-                    <form onSubmit={handleVerifyOtp} className="space-y-6 bg-white/[0.02] border border-white/5 p-8 rounded-[32px] backdrop-blur-md">
-                        <div className="space-y-4">
-                            <div className="flex justify-center">
-                                <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center">
-                                    <ShieldCheck className="w-8 h-8 text-purple-500" />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-300 block text-center">Verification Code</label>
-                                <input
-                                    type="text"
-                                    maxLength={6}
-                                    value={otp}
-                                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                                    placeholder="000000"
-                                    className="w-full bg-[#111] border border-white/10 rounded-xl py-4 text-center text-2xl font-bold tracking-[0.5em] outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all"
-                                    required
-                                    autoFocus
-                                />
-                            </div>
                         </div>
+                    </div>
+                </div>
 
-                        {error && (
-                            <div className="flex items-center gap-2 text-red-400 text-xs bg-red-400/10 p-3 rounded-lg border border-red-400/20">
-                                <AlertCircle className="w-4 h-4" />
-                                <span>{error}</span>
-                            </div>
-                        )}
-
-                        <button
-                            type="submit"
-                            disabled={isLoading || otp.length !== 6}
-                            className="w-full bg-white text-black font-semibold py-3.5 rounded-xl hover:bg-zinc-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirm & Login"}
-                        </button>
-
-                        <div className="text-center">
-                            <button
-                                type="button"
-                                onClick={() => setStep('email')}
-                                className="text-sm text-zinc-500 hover:text-white transition-colors"
-                            >
-                                Back to email entry
-                            </button>
-                        </div>
-                    </form>
-                )}
-
-                <p className="mt-8 text-center text-sm text-zinc-500">
-                    Don&apos;t have an account?{" "}
-                    <Link href="/signup" className="text-white font-medium hover:underline underline-offset-4">Create one</Link>
-                </p>
+                <div className="mt-12 text-center animate-in fade-in duration-1000 delay-500">
+                    <p className="text-[14px] font-medium text-zinc-500">
+                        Newoperative?{" "}
+                        <Link href="/signup" className="text-white hover:text-blue-400 transition-colors underline-offset-8 hover:underline">Register Conduit</Link>
+                    </p>
+                </div>
             </div>
 
-            {/* Footer Branding */}
-            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 opacity-30 select-none">
-                <span className="text-xs font-medium tracking-widest uppercase">Powered by Sakibur Rahman</span>
+            {/* Premium Branding Footer */}
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-4 opacity-15 select-none pointer-events-none">
+                <span className="text-[9px] font-black tracking-[0.5em] uppercase text-zinc-500 whitespace-nowrap">Authorized Intelligence Ops</span>
             </div>
         </div>
     );
