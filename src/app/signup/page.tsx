@@ -2,21 +2,19 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { BrainCircuit, Mail, Eye, EyeOff, Loader2, User, Building2, AlertCircle, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { BrainCircuit, Mail, Loader2, User, Building2, AlertCircle, CheckCircle2, ShieldCheck, ArrowRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
 export default function SignupPage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = React.useState(false);
-    const [showPassword, setShowPassword] = React.useState(false);
     const [step, setStep] = React.useState<'form' | 'otp'>('form');
 
     // Form State
     const [fullName, setFullName] = React.useState('');
     const [businessName, setBusinessName] = React.useState('');
     const [email, setEmail] = React.useState('');
-    const [password, setPassword] = React.useState('');
 
     // OTP State
     const [otp, setOtp] = React.useState('');
@@ -32,17 +30,18 @@ export default function SignupPage() {
         try {
             const supabase = createClient();
 
-            // Note: For OTP to work correctly with signup, the user must have their 
-            // Supabase email templates configured to provide a 6-digit code.
-            const { data, error: authError } = await supabase.auth.signUp({
+            // For pure OTP signup, we use signInWithOtp with shouldCreateUser: true (default)
+            // We pass business metadata here
+            const { error: authError } = await supabase.auth.signInWithOtp({
                 email,
-                password,
                 options: {
+                    shouldCreateUser: true,
                     data: {
                         full_name: fullName,
                         business_name: businessName,
                     },
-                    // We specify this but the user will enter OTP instead of clicking
+                    // Even if it sends a link, it will ALSO send a code if configured,
+                    // or we can just ignore the link and use the code.
                     emailRedirectTo: `${window.location.origin}/auth/callback`,
                 },
             });
@@ -52,11 +51,7 @@ export default function SignupPage() {
                 return;
             }
 
-            if (data.user) {
-                // If user already exists but is not confirmed, signUp might return user but still require confirmation
-                // We move to OTP step
-                setStep('otp');
-            }
+            setStep('otp');
         } catch (err: any) {
             setError('An unexpected error occurred. Please try again.');
             console.error('Signup error:', err);
@@ -72,10 +67,12 @@ export default function SignupPage() {
 
         try {
             const supabase = createClient();
+            // type: 'email' or 'signup' depending on how it was sent. 
+            // For signInWithOtp, it's usually 'email' (magic link/otp)
             const { error: verifyError } = await supabase.auth.verifyOtp({
                 email,
                 token: otp,
-                type: 'signup',
+                type: 'email',
             });
 
             if (verifyError) {
@@ -102,10 +99,10 @@ export default function SignupPage() {
                     <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6">
                         <CheckCircle2 className="w-8 h-8 text-green-500" />
                     </div>
-                    <h1 className="text-3xl font-bold mb-4">Verification Successful</h1>
+                    <h1 className="text-3xl font-bold mb-4">Account Verified</h1>
                     <p className="text-zinc-400 leading-relaxed mb-8">
                         Welcome to OmniiAi, <span className="text-white font-medium">{fullName}</span>.
-                        Redirecting you to your dashboard...
+                        We&apos;re preparing your Command Center...
                     </p>
                     <Loader2 className="w-6 h-6 animate-spin text-purple-500 mx-auto" />
                 </div>
@@ -125,12 +122,12 @@ export default function SignupPage() {
                         <BrainCircuit className="w-7 h-7 text-white" />
                     </div>
                     <h1 className="text-3xl font-bold tracking-tight">
-                        {step === 'form' ? 'Create Account' : 'Verify Email'}
+                        {step === 'form' ? 'Start Free Trial' : 'Confirm Identity'}
                     </h1>
                     <p className="text-zinc-400 mt-2 text-sm">
                         {step === 'form'
-                            ? 'Join the next generation of autonomous business'
-                            : `Enter the 6-digit code sent to ${email}`}
+                            ? 'Experience the power of autonomous business AI'
+                            : `A 6-digit code has been sent to ${email}`}
                     </p>
                 </div>
 
@@ -181,27 +178,6 @@ export default function SignupPage() {
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300 ml-1">Create Password</label>
-                            <div className="relative group">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors z-20"
-                                >
-                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                </button>
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    className="w-full bg-[#111] border border-white/10 rounded-xl py-3 px-4 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all text-sm"
-                                    required
-                                />
-                            </div>
-                        </div>
-
                         {error && (
                             <div className="flex items-center gap-2 text-red-400 text-xs bg-red-400/10 p-3 rounded-lg border border-red-400/20">
                                 <AlertCircle className="w-4 h-4" />
@@ -213,15 +189,22 @@ export default function SignupPage() {
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full bg-white text-black font-semibold py-3.5 rounded-xl hover:bg-zinc-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-xl shadow-white/5"
+                                className="w-full bg-white text-black font-semibold py-3.5 rounded-xl hover:bg-zinc-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-xl shadow-white/5 group"
                             >
-                                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Start Free Trial"}
+                                {isLoading ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <>
+                                        Get Verification Code
+                                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                    </>
+                                )}
                             </button>
                         </div>
 
                         <p className="text-[10px] text-zinc-500 text-center px-4 leading-relaxed">
-                            By signing up, you agree to our Terms of Service and Privacy Policy.
-                            No credit card required for the free tier.
+                            No password required. We&apos;ll send a secure single-use code to your email.
+                            By signing up, you agree to our Terms of Service.
                         </p>
                     </form>
                 ) : (
@@ -233,7 +216,7 @@ export default function SignupPage() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-300 block text-center">Verification Code</label>
+                                <label className="text-sm font-medium text-zinc-300 block text-center">Enter 6-digit Code</label>
                                 <input
                                     type="text"
                                     maxLength={6}
@@ -259,16 +242,16 @@ export default function SignupPage() {
                             disabled={isLoading || otp.length !== 6}
                             className="w-full bg-white text-black font-semibold py-3.5 rounded-xl hover:bg-zinc-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100"
                         >
-                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verify & Complete Signup"}
+                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verify & Start Trial"}
                         </button>
 
-                        <div className="text-center">
+                        <div className="text-center space-y-2">
                             <button
                                 type="button"
                                 onClick={() => setStep('form')}
                                 className="text-sm text-zinc-500 hover:text-white transition-colors"
                             >
-                                Use a different email address
+                                Change email address
                             </button>
                         </div>
                     </form>
