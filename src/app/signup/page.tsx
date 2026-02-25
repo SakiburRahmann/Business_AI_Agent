@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { BrainCircuit, Mail, Eye, EyeOff, Loader2, User, Building2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { BrainCircuit, Mail, Eye, EyeOff, Loader2, User, Building2, AlertCircle, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
@@ -10,14 +10,21 @@ export default function SignupPage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = React.useState(false);
     const [showPassword, setShowPassword] = React.useState(false);
+    const [step, setStep] = React.useState<'form' | 'otp'>('form');
+
+    // Form State
     const [fullName, setFullName] = React.useState('');
     const [businessName, setBusinessName] = React.useState('');
     const [email, setEmail] = React.useState('');
     const [password, setPassword] = React.useState('');
+
+    // OTP State
+    const [otp, setOtp] = React.useState('');
+
     const [error, setError] = React.useState<string | null>(null);
     const [isSuccess, setIsSuccess] = React.useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSignupSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         setError(null);
@@ -25,6 +32,8 @@ export default function SignupPage() {
         try {
             const supabase = createClient();
 
+            // Note: For OTP to work correctly with signup, the user must have their 
+            // Supabase email templates configured to provide a 6-digit code.
             const { data, error: authError } = await supabase.auth.signUp({
                 email,
                 password,
@@ -33,6 +42,7 @@ export default function SignupPage() {
                         full_name: fullName,
                         business_name: businessName,
                     },
+                    // We specify this but the user will enter OTP instead of clicking
                     emailRedirectTo: `${window.location.origin}/auth/callback`,
                 },
             });
@@ -43,16 +53,43 @@ export default function SignupPage() {
             }
 
             if (data.user) {
-                setIsSuccess(true);
-                // In a real scenario, we might wait for email confirmation or auto-login
-                // For now, we show success and redirect after a delay
-                setTimeout(() => {
-                    router.push('/login');
-                }, 3000);
+                // If user already exists but is not confirmed, signUp might return user but still require confirmation
+                // We move to OTP step
+                setStep('otp');
             }
         } catch (err: any) {
             setError('An unexpected error occurred. Please try again.');
             console.error('Signup error:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            const supabase = createClient();
+            const { error: verifyError } = await supabase.auth.verifyOtp({
+                email,
+                token: otp,
+                type: 'signup',
+            });
+
+            if (verifyError) {
+                setError(verifyError.message);
+                return;
+            }
+
+            setIsSuccess(true);
+            setTimeout(() => {
+                router.push('/dashboard');
+            }, 2000);
+        } catch (err: any) {
+            setError('Failed to verify code. Please try again.');
+            console.error('OTP error:', err);
         } finally {
             setIsLoading(false);
         }
@@ -65,14 +102,12 @@ export default function SignupPage() {
                     <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6">
                         <CheckCircle2 className="w-8 h-8 text-green-500" />
                     </div>
-                    <h1 className="text-3xl font-bold mb-4">Check your email</h1>
+                    <h1 className="text-3xl font-bold mb-4">Verification Successful</h1>
                     <p className="text-zinc-400 leading-relaxed mb-8">
-                        We&apos;ve sent a confirmation link to <span className="text-white font-medium">{email}</span>.
-                        Please verify your account to continue.
+                        Welcome to OmniiAi, <span className="text-white font-medium">{fullName}</span>.
+                        Redirecting you to your dashboard...
                     </p>
-                    <Link href="/login" className="text-purple-400 hover:text-purple-300 font-medium">
-                        Return to login
-                    </Link>
+                    <Loader2 className="w-6 h-6 animate-spin text-purple-500 mx-auto" />
                 </div>
             </div>
         );
@@ -89,99 +124,155 @@ export default function SignupPage() {
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center mb-4 shadow-lg shadow-purple-500/20">
                         <BrainCircuit className="w-7 h-7 text-white" />
                     </div>
-                    <h1 className="text-3xl font-bold tracking-tight">Create Account</h1>
-                    <p className="text-zinc-400 mt-2 text-sm">Join the next generation of autonomous business</p>
+                    <h1 className="text-3xl font-bold tracking-tight">
+                        {step === 'form' ? 'Create Account' : 'Verify Email'}
+                    </h1>
+                    <p className="text-zinc-400 mt-2 text-sm">
+                        {step === 'form'
+                            ? 'Join the next generation of autonomous business'
+                            : `Enter the 6-digit code sent to ${email}`}
+                    </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4 bg-white/[0.02] border border-white/5 p-8 rounded-[32px] backdrop-blur-md">
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-zinc-300 ml-1">Full Name</label>
-                        <div className="relative group">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-purple-400 transition-colors" />
-                            <input
-                                type="text"
-                                value={fullName}
-                                onChange={(e) => setFullName(e.target.value)}
-                                placeholder="Sakibur Rahman"
-                                className="w-full bg-[#111] border border-white/10 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all text-sm"
-                                required
-                            />
+                {step === 'form' ? (
+                    <form onSubmit={handleSignupSubmit} className="space-y-4 bg-white/[0.02] border border-white/5 p-8 rounded-[32px] backdrop-blur-md">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-zinc-300 ml-1">Full Name</label>
+                            <div className="relative group">
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-purple-400 transition-colors" />
+                                <input
+                                    type="text"
+                                    value={fullName}
+                                    onChange={(e) => setFullName(e.target.value)}
+                                    placeholder="Sakibur Rahman"
+                                    className="w-full bg-[#111] border border-white/10 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all text-sm"
+                                    required
+                                />
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-zinc-300 ml-1">Business Name</label>
-                        <div className="relative group">
-                            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-purple-400 transition-colors" />
-                            <input
-                                type="text"
-                                value={businessName}
-                                onChange={(e) => setBusinessName(e.target.value)}
-                                placeholder="OmniiAi Solutions"
-                                className="w-full bg-[#111] border border-white/10 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all text-sm"
-                                required
-                            />
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-zinc-300 ml-1">Business Name</label>
+                            <div className="relative group">
+                                <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-purple-400 transition-colors" />
+                                <input
+                                    type="text"
+                                    value={businessName}
+                                    onChange={(e) => setBusinessName(e.target.value)}
+                                    placeholder="OmniiAi Solutions"
+                                    className="w-full bg-[#111] border border-white/10 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all text-sm"
+                                    required
+                                />
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-zinc-300 ml-1">Work Email</label>
-                        <div className="relative group">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-purple-400 transition-colors" />
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="name@company.com"
-                                className="w-full bg-[#111] border border-white/10 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all text-sm"
-                                required
-                            />
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-zinc-300 ml-1">Work Email</label>
+                            <div className="relative group">
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-purple-400 transition-colors" />
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="name@company.com"
+                                    className="w-full bg-[#111] border border-white/10 rounded-xl py-3 pl-10 pr-4 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all text-sm"
+                                    required
+                                />
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-zinc-300 ml-1">Create Password</label>
-                        <div className="relative group">
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium text-zinc-300 ml-1">Create Password</label>
+                            <div className="relative group">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors z-20"
+                                >
+                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    placeholder="••••••••"
+                                    className="w-full bg-[#111] border border-white/10 rounded-xl py-3 px-4 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all text-sm"
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        {error && (
+                            <div className="flex items-center gap-2 text-red-400 text-xs bg-red-400/10 p-3 rounded-lg border border-red-400/20">
+                                <AlertCircle className="w-4 h-4" />
+                                <span>{error}</span>
+                            </div>
+                        )}
+
+                        <div className="pt-2">
                             <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors z-20"
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full bg-white text-black font-semibold py-3.5 rounded-xl hover:bg-zinc-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-xl shadow-white/5"
                             >
-                                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Start Free Trial"}
                             </button>
-                            <input
-                                type={showPassword ? "text" : "password"}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="••••••••"
-                                className="w-full bg-[#111] border border-white/10 rounded-xl py-3 px-4 outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all text-sm"
-                                required
-                            />
                         </div>
-                    </div>
 
-                    {error && (
-                        <div className="flex items-center gap-2 text-red-400 text-xs bg-red-400/10 p-3 rounded-lg border border-red-400/20">
-                            <AlertCircle className="w-4 h-4" />
-                            <span>{error}</span>
+                        <p className="text-[10px] text-zinc-500 text-center px-4 leading-relaxed">
+                            By signing up, you agree to our Terms of Service and Privacy Policy.
+                            No credit card required for the free tier.
+                        </p>
+                    </form>
+                ) : (
+                    <form onSubmit={handleVerifyOtp} className="space-y-6 bg-white/[0.02] border border-white/5 p-8 rounded-[32px] backdrop-blur-md">
+                        <div className="space-y-4">
+                            <div className="flex justify-center">
+                                <div className="w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center">
+                                    <ShieldCheck className="w-8 h-8 text-purple-500" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-zinc-300 block text-center">Verification Code</label>
+                                <input
+                                    type="text"
+                                    maxLength={6}
+                                    value={otp}
+                                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                                    placeholder="000000"
+                                    className="w-full bg-[#111] border border-white/10 rounded-xl py-4 text-center text-2xl font-bold tracking-[0.5em] outline-none focus:border-purple-500/50 focus:ring-4 focus:ring-purple-500/5 transition-all"
+                                    required
+                                    autoFocus
+                                />
+                            </div>
                         </div>
-                    )}
 
-                    <div className="pt-2">
+                        {error && (
+                            <div className="flex items-center gap-2 text-red-400 text-xs bg-red-400/10 p-3 rounded-lg border border-red-400/20">
+                                <AlertCircle className="w-4 h-4" />
+                                <span>{error}</span>
+                            </div>
+                        )}
+
                         <button
                             type="submit"
-                            disabled={isLoading}
-                            className="w-full bg-white text-black font-semibold py-3.5 rounded-xl hover:bg-zinc-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 shadow-xl shadow-white/5"
+                            disabled={isLoading || otp.length !== 6}
+                            className="w-full bg-white text-black font-semibold py-3.5 rounded-xl hover:bg-zinc-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100"
                         >
-                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Start Free Trial"}
+                            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verify & Complete Signup"}
                         </button>
-                    </div>
 
-                    <p className="text-[10px] text-zinc-500 text-center px-4 leading-relaxed">
-                        By signing up, you agree to our Terms of Service and Privacy Policy.
-                        No credit card required for the free tier.
-                    </p>
-                </form>
+                        <div className="text-center">
+                            <button
+                                type="button"
+                                onClick={() => setStep('form')}
+                                className="text-sm text-zinc-500 hover:text-white transition-colors"
+                            >
+                                Use a different email address
+                            </button>
+                        </div>
+                    </form>
+                )}
 
                 <p className="mt-8 text-center text-sm text-zinc-500">
                     Already have an account?{" "}
