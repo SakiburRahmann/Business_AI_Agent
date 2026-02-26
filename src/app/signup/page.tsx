@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { BrainCircuit, Mail, Loader2, User, Building2, AlertCircle, CheckCircle2, Lock, ArrowRight, ShieldCheck } from 'lucide-react';
+import { BrainCircuit, Mail, Loader2, User, Building2, AlertCircle, CheckCircle2, Lock, ArrowRight, ShieldCheck, RefreshCw } from 'lucide-react';
 import { createClient } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
@@ -24,6 +24,7 @@ export default function SignupPage() {
     // UI State
     const [error, setError] = React.useState<string | null>(null);
     const [isSuccess, setIsSuccess] = React.useState(false);
+    const [resendStatus, setResendStatus] = React.useState<'idle' | 'sending' | 'sent'>('idle');
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,7 +34,8 @@ export default function SignupPage() {
         try {
             const supabase = createClient();
 
-            // Sign up with email and password
+            console.log(`[Signup] Attempting registration for ${email}`);
+
             const { data, error: signupError } = await supabase.auth.signUp({
                 email,
                 password,
@@ -44,23 +46,51 @@ export default function SignupPage() {
                         business_name: businessName,
                         full_name: `${firstName} ${lastName}`.trim(),
                     },
-                    // The redirect URL for the confirmation link (if used)
                     emailRedirectTo: `${window.location.origin}/auth/callback`,
                 },
             });
 
             if (signupError) {
+                console.error('[Signup Error]', signupError);
                 setError(signupError.message);
                 return;
             }
 
-            // If auto-confirm is off, data.user is returned but session is null
-            // We move to the verification step where the user enters the code
+            console.log('[Signup Success] Data:', data);
+
+            // If the user already exists but isn't confirmed, Supabase might not send a new email
+            // or might return an empty identity. We proceed to verify regardless.
             setStep('verify');
         } catch (err: any) {
             setError('An unexpected error occurred. Please try again.');
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    const handleResend = async () => {
+        setResendStatus('sending');
+        try {
+            const supabase = createClient();
+            // To resend a signup confirmation email
+            const { error: resendError } = await supabase.auth.resend({
+                type: 'signup',
+                email: email,
+                options: {
+                    emailRedirectTo: `${window.location.origin}/auth/callback`,
+                }
+            });
+
+            if (resendError) {
+                setError(resendError.message);
+                setResendStatus('idle');
+            } else {
+                setResendStatus('sent');
+                setTimeout(() => setResendStatus('idle'), 5000);
+            }
+        } catch (err) {
+            setError('Failed to resend email.');
+            setResendStatus('idle');
         }
     };
 
@@ -74,7 +104,7 @@ export default function SignupPage() {
             const { data, error: verifyError } = await supabase.auth.verifyOtp({
                 email,
                 token: otp,
-                type: 'signup', // Verification type for email confirmation
+                type: 'signup',
             });
 
             if (verifyError) {
@@ -100,9 +130,9 @@ export default function SignupPage() {
                     <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-6">
                         <CheckCircle2 className="w-10 h-10 text-green-500" />
                     </div>
-                    <h1 className="text-3xl font-bold mb-4">Account Created</h1>
+                    <h1 className="text-3xl font-bold mb-4">Account Verified</h1>
                     <p className="text-zinc-400 mb-8">
-                        Welcome, {firstName}! Your account has been successfully verified.
+                        Welcome, {firstName}! Redirecting you to your dashboard...
                     </p>
                     <div className="flex justify-center">
                         <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
@@ -114,7 +144,6 @@ export default function SignupPage() {
 
     return (
         <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center p-6 lg:p-12 relative overflow-hidden">
-            {/* Background pattern */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#111_0%,_transparent_70%)] opacity-50" />
 
             <div className="w-full max-w-md relative z-10">
@@ -123,44 +152,44 @@ export default function SignupPage() {
                         <BrainCircuit className="w-8 h-8 text-white" />
                     </div>
                     <h1 className="text-3xl font-bold mb-2">
-                        {step === 'details' ? 'Create your account' : 'Verify your email'}
+                        {step === 'details' ? 'Create your account' : 'Check your email'}
                     </h1>
                     <p className="text-zinc-400">
                         {step === 'details'
-                            ? 'Get started with OmniiAi today.'
-                            : `We've sent a 6-digit code to ${email}`}
+                            ? 'Start your 14-day free trial today.'
+                            : `We've sent a 6-digit verification code to ${email}`}
                     </p>
                 </div>
 
                 {step === 'details' ? (
-                    <form onSubmit={handleSignup} className="space-y-4 bg-zinc-900/40 border border-zinc-800 p-8 rounded-3xl backdrop-blur-sm">
+                    <form onSubmit={handleSignup} className="space-y-4 bg-zinc-900/40 border border-zinc-800 p-8 rounded-3xl backdrop-blur-sm shadow-2xl">
                         <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-300">First Name</label>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-zinc-400 ml-1">First Name</label>
                                 <input
                                     type="text"
                                     value={firstName}
                                     onChange={(e) => setFirstName(e.target.value)}
-                                    placeholder="First Name"
+                                    placeholder="John"
                                     className="w-full bg-black border border-zinc-800 rounded-xl py-3 px-4 outline-none focus:border-purple-500 transition-colors text-sm"
                                     required
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-300">Last Name</label>
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-semibold text-zinc-400 ml-1">Last Name</label>
                                 <input
                                     type="text"
                                     value={lastName}
                                     onChange={(e) => setLastName(e.target.value)}
-                                    placeholder="Last Name"
+                                    placeholder="Doe"
                                     className="w-full bg-black border border-zinc-800 rounded-xl py-3 px-4 outline-none focus:border-purple-500 transition-colors text-sm"
                                     required
                                 />
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300">Work Email</label>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-400 ml-1">Work Email</label>
                             <input
                                 type="email"
                                 value={email}
@@ -171,20 +200,20 @@ export default function SignupPage() {
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300">Business Name</label>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-400 ml-1">Company Name</label>
                             <input
                                 type="text"
                                 value={businessName}
                                 onChange={(e) => setBusinessName(e.target.value)}
-                                placeholder="Your Company Name"
+                                placeholder="Inc. Ltd"
                                 className="w-full bg-black border border-zinc-800 rounded-xl py-3 px-4 outline-none focus:border-purple-500 transition-colors text-sm"
                                 required
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-zinc-300">Password</label>
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-zinc-400 ml-1">Create Password</label>
                             <input
                                 type="password"
                                 value={password}
@@ -197,8 +226,8 @@ export default function SignupPage() {
                         </div>
 
                         {error && (
-                            <div className="flex items-center gap-2 text-red-500 text-xs bg-red-500/10 p-3 rounded-xl border border-red-500/20">
-                                <AlertCircle className="w-4 h-4 shrink-0" />
+                            <div className="flex items-start gap-2 text-red-400 text-xs bg-red-400/5 p-3 rounded-xl border border-red-400/10 animate-in fade-in slide-in-from-top-1">
+                                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                                 <span>{error}</span>
                             </div>
                         )}
@@ -206,27 +235,27 @@ export default function SignupPage() {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3.5 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3.5 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 mt-4"
                         >
-                            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Sign Up"}
+                            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Create Account"}
                             {!isLoading && <ArrowRight className="w-4 h-4" />}
                         </button>
                     </form>
                 ) : (
-                    <form onSubmit={handleVerifyOtp} className="space-y-6 bg-zinc-900/40 border border-zinc-800 p-8 rounded-3xl backdrop-blur-sm">
-                        <div className="text-center space-y-4">
-                            <div className="w-16 h-16 rounded-full bg-purple-600/10 flex items-center justify-center mx-auto ring-1 ring-purple-500/20">
-                                <ShieldCheck className="w-8 h-8 text-purple-500" />
+                    <form onSubmit={handleVerifyOtp} className="space-y-8 bg-zinc-900/40 border border-zinc-800 p-8 rounded-3xl backdrop-blur-sm shadow-2xl">
+                        <div className="text-center space-y-6">
+                            <div className="w-20 h-20 rounded-3xl bg-purple-600/10 flex items-center justify-center mx-auto ring-1 ring-purple-500/20">
+                                <ShieldCheck className="w-10 h-10 text-purple-500" />
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-zinc-300 block">Verification Code</label>
+                            <div className="space-y-3">
+                                <label className="text-sm font-semibold text-zinc-300 block">Verification Code</label>
                                 <input
                                     type="text"
                                     maxLength={6}
                                     value={otp}
                                     onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                                    placeholder="000000"
-                                    className="w-full bg-black border border-zinc-800 rounded-xl py-4 text-center text-2xl font-bold tracking-[0.5em] outline-none focus:border-purple-500 transition-all"
+                                    placeholder="000 000"
+                                    className="w-full bg-black border border-zinc-800 rounded-2xl py-5 text-center text-4xl font-bold tracking-[0.4em] outline-none focus:border-purple-500 transition-all placeholder:text-zinc-800"
                                     required
                                     autoFocus
                                 />
@@ -234,39 +263,56 @@ export default function SignupPage() {
                         </div>
 
                         {error && (
-                            <div className="flex items-center gap-2 text-red-500 text-xs bg-red-500/10 p-3 rounded-xl border border-red-500/20">
-                                <AlertCircle className="w-4 h-4 shrink-0" />
+                            <div className="flex items-start gap-2 text-red-400 text-xs bg-red-400/5 p-3 rounded-xl border border-red-400/10">
+                                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                                 <span>{error}</span>
                             </div>
                         )}
 
-                        <button
-                            type="submit"
-                            disabled={isLoading || otp.length !== 6}
-                            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3.5 rounded-xl transition-all active:scale-[0.98] disabled:opacity-50"
-                        >
-                            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify Account"}
-                        </button>
+                        <div className="space-y-4">
+                            <button
+                                type="submit"
+                                disabled={isLoading || otp.length !== 6}
+                                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-xl transition-all active:scale-[0.98] disabled:opacity-50"
+                            >
+                                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify Identity"}
+                            </button>
 
-                        <button
-                            type="button"
-                            onClick={() => setStep('details')}
-                            className="w-full text-xs text-zinc-500 hover:text-white transition-colors"
-                        >
-                            Wrong email? Go back
-                        </button>
+                            <div className="flex flex-col items-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={handleResend}
+                                    disabled={resendStatus !== 'idle'}
+                                    className="text-xs text-zinc-400 hover:text-white transition-colors flex items-center gap-2 disabled:text-zinc-600"
+                                >
+                                    {resendStatus === 'sending' ? (
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                    ) : (
+                                        <RefreshCw className="w-3 h-3" />
+                                    )}
+                                    {resendStatus === 'sent' ? 'New code sent!' : 'Didn\'t get a code? Resend'}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setStep('details')}
+                                    className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+                                >
+                                    Back to details
+                                </button>
+                            </div>
+                        </div>
                     </form>
                 )}
 
                 <p className="mt-8 text-center text-sm text-zinc-500">
                     Already have an account?{" "}
-                    <Link href="/login" className="text-white hover:underline">Log In</Link>
+                    <Link href="/login" className="text-white hover:underline transition-colors font-medium">Log In</Link>
                 </p>
             </div>
 
-            {/* Simple footer */}
-            <div className="mt-12 text-[10px] text-zinc-600 uppercase tracking-widest relative z-10">
-                OmniiAi Business Systems
+            <div className="mt-12 text-[11px] text-zinc-700 uppercase tracking-widest relative z-10 font-bold">
+                OmniiAi Business Cloud
             </div>
         </div>
     );
