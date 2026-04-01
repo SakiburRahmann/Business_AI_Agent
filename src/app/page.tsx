@@ -1,7 +1,7 @@
 'use client';
 
 import { useChat } from 'ai/react';
-import { Send, Loader2, Sparkles, User, Bot, Command, ArrowDownCircle } from 'lucide-react';
+import { Send, Loader2, Sparkles, User, Bot, Command, ArrowDownCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 
@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from 'react';
  * Optimized for Mobile + AI Streaming.
  */
 export default function OmniiChatPage() {
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, isLoading, error, reload } = useChat({
     api: '/api/chat',
     initialMessages: [
       { id: 'boot', role: 'assistant', content: "OmniiChat 1.0 Systems Online. Pure Conversational Intelligence initialized. How can I help you architect your vision today?" }
@@ -127,6 +127,30 @@ export default function OmniiChatPage() {
                         </div>
                     </div>
                 ))}
+
+                {/* Error Boundary - Premium Diagnostic UI */}
+                {error && (
+                  <div className="flex justify-center animate-in zoom-in-95 duration-500 pb-12">
+                    <div className="max-w-md w-full bg-red-500/5 border border-red-500/20 rounded-[2rem] p-6 text-center space-y-4 shadow-2xl backdrop-blur-md">
+                      <div className="mx-auto w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center border border-red-500/20">
+                        <AlertCircle className="text-red-400" size={24} />
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-base font-bold text-red-100 font-outfit uppercase tracking-tighter">Neural Link Divergence</h3>
+                        <p className="text-[10px] text-red-400/70 font-black leading-relaxed uppercase tracking-[0.2em]">
+                          Infrastructure Anomaly Detected • Check Server Config
+                        </p>
+                      </div>
+                      <button 
+                        onClick={() => reload()}
+                        className="w-full flex items-center justify-center space-x-2 text-[10px] font-black uppercase tracking-[0.3em] bg-red-500/20 hover:bg-red-500/30 text-red-100 py-4 rounded-2xl border border-red-500/30 transition-all duration-300 active:scale-[0.98]"
+                      >
+                        <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
+                        <span>Re-Sync Transmission</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
             </div>
         </div>
 
@@ -160,8 +184,8 @@ export default function OmniiChatPage() {
                     </button>
                 </div>
             </form>
-            <p className="hidden sm:block text-center mt-4 text-[8px] text-zinc-700 font-black uppercase tracking-[0.6em] opacity-40">
-                Authorized Engineering Terminal Link 1.0
+            <p className="hidden sm:block text-center mt-4 text-[8px] text-zinc-700 font-black uppercase tracking-[0.6em] opacity-60">
+                OmniiChat 1.0 • Neural Protocol 1.0 • Built by Sakibur Rahman
             </p>
         </div>
       </main>
