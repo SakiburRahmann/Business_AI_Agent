@@ -1,13 +1,14 @@
 'use client';
 
 import { useChat } from 'ai/react';
-import { Send, Loader2, Sparkles, User, Bot, Command } from 'lucide-react';
+import { Send, Loader2, Sparkles, User, Bot, Command, ArrowDownCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * OmniiChat 1.0 - The Masterpiece Interface
  * Designed to feel like Apple + Gemini.
+ * Optimized for Mobile + AI Streaming.
  */
 export default function OmniiChatPage() {
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
@@ -18,82 +19,108 @@ export default function OmniiChatPage() {
   });
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [showScrollButton, setShowScrollButton] = useState(false);
 
   // Smooth Scroll Persistence
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      const { scrollHeight, clientHeight, scrollTop } = scrollRef.current;
+      const isAtBottom = scrollHeight - clientHeight - scrollTop < 100;
+      
+      if (isAtBottom) {
+        scrollRef.current.scrollTo({
+          top: scrollHeight,
+          behavior: 'smooth'
+        });
+      } else {
+        setShowScrollButton(true);
+      }
     }
   }, [messages]);
 
+  const scrollToBottom = () => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+    setShowScrollButton(false);
+  };
+
   return (
-    <div className="flex h-screen bg-[#020202] text-zinc-200 font-sans selection:bg-purple-500/30 selection:text-white">
+    <div className="flex h-[100dvh] bg-[#020202] text-zinc-200 font-inter overflow-hidden">
       {/* Sidebar - Minimalism Focus */}
-      <div className="w-20 lg:w-72 border-r border-white/5 bg-[#050505] flex flex-col items-center py-8 px-4 hidden sm:flex">
+      <aside className="w-20 lg:w-72 border-r border-white/[0.03] bg-[#050505] flex flex-col items-center py-8 px-4 hidden md:flex">
          <div className="flex items-center gap-3 mb-12 self-start px-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.3)]">
-                <Command className="w-4 h-4 text-white" />
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 via-blue-500 to-indigo-600 flex items-center justify-center shadow-[0_0_20px_rgba(168,85,247,0.2)] ring-1 ring-white/10">
+                <Command className="w-5 h-5 text-white" />
             </div>
-            <span className="text-sm font-black tracking-widest uppercase hidden lg:inline">OmniiChat</span>
+            <span className="text-xs font-black tracking-[0.2em] uppercase hidden lg:inline font-outfit">OmniiChat</span>
          </div>
          
-         <div className="space-y-4 w-full">
-            <button className="w-full text-left px-4 py-3 rounded-xl bg-white/[0.03] border border-white/5 text-xs font-bold uppercase tracking-wider text-zinc-400 hover:text-white transition-all flex items-center gap-3">
+         <div className="space-y-3 w-full">
+            <button className="w-full text-left px-4 py-3 rounded-2xl bg-white/[0.03] border border-white/5 text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:text-white hover:bg-white/[0.05] transition-all flex items-center gap-3">
                 <Sparkles className="w-4 h-4 text-purple-400" />
-                <span className="hidden lg:inline">New Synthesis</span>
+                <span className="hidden lg:inline">Core Synthesis</span>
             </button>
          </div>
          
          <div className="mt-auto w-full px-2">
-            <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.02] border border-white/5">
-                <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center border border-white/10">
-                    <User className="w-4 h-4 text-zinc-400" />
+            <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/[0.02] border border-white/10 backdrop-blur-sm">
+                <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center border border-white/10 shrink-0">
+                    <User className="w-5 h-5 text-zinc-400" />
                 </div>
-                <div className="hidden lg:block">
-                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">Authorized User</p>
-                    <p className="text-xs text-white truncate w-32">Sakibur Rahman</p>
+                <div className="hidden lg:block truncate">
+                    <p className="text-[9px] font-black text-zinc-500 uppercase tracking-tighter">Verified Architect</p>
+                    <p className="text-xs font-bold text-white truncate">Sakibur Rahman</p>
                 </div>
             </div>
          </div>
-      </div>
+      </aside>
 
       {/* Main Console */}
-      <div className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-b from-[#050505] to-[#020202]">
+      <main className="flex-1 flex flex-col relative overflow-hidden bg-gradient-to-b from-[#050505] to-[#020202]">
         {/* Glossy Header */}
-        <div className="h-20 flex items-center justify-between px-8 border-b border-white/[0.02] backdrop-blur-3xl bg-black/40 z-20">
+        <header className="h-16 md:h-20 flex items-center justify-between px-6 md:px-10 border-b border-white/[0.02] backdrop-blur-3xl bg-black/40 z-20">
             <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">Gemini 2.0 Flash Integration Active</span>
+                <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.6)] animate-pulse" />
+                <span className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-500">Neural Link Stable</span>
             </div>
-        </div>
+            <div className="flex items-center gap-4">
+               <span className="text-[10px] font-bold text-zinc-600 hidden sm:inline uppercase tracking-widest">Gemini 2.0 Flash</span>
+            </div>
+        </header>
 
         {/* Message Feed - High Fidelity Typography */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto pt-12 pb-32 px-6 sm:px-12 space-y-12">
-            <div className="max-w-4xl mx-auto space-y-12">
+        <div 
+          ref={scrollRef} 
+          onScroll={(e) => {
+            const target = e.target as HTMLDivElement;
+            setShowScrollButton(target.scrollHeight - target.clientHeight - target.scrollTop > 500);
+          }}
+          className="flex-1 overflow-y-auto pt-8 pb-32 px-6 sm:px-12 space-y-10"
+        >
+            <div className="max-w-3xl mx-auto space-y-10">
                 {messages.map((m) => (
                     <div key={m.id} className={cn(
-                        "group flex gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500",
+                        "group flex gap-5 md:gap-8 animate-in fade-in slide-in-from-bottom-2 duration-700",
                         m.role === 'user' ? "flex-row-reverse" : "flex-row"
                     )}>
                         <div className={cn(
-                            "w-10 h-10 rounded-2xl shrink-0 flex items-center justify-center border transition-all duration-500",
+                            "w-9 h-9 md:w-11 md:h-11 rounded-2xl shrink-0 flex items-center justify-center border transition-all duration-500 shadow-xl",
                             m.role === 'user' 
-                                ? "bg-purple-600/10 border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.1)] group-hover:scale-110" 
-                                : "bg-white/[0.03] border-white/5 group-hover:scale-110"
+                                ? "bg-purple-600/10 border-purple-500/20 shadow-purple-500/5 group-hover:bg-purple-600/20" 
+                                : "bg-white/[0.04] border-white/10 group-hover:bg-white/[0.08]"
                         )}>
                             {m.role === 'user' ? <User className="w-5 h-5 text-purple-400" /> : <Bot className="w-5 h-5 text-blue-400" />}
                         </div>
                         
                         <div className={cn(
-                          "flex flex-col gap-3",
+                          "flex flex-col gap-2.5 max-w-[85%] sm:max-w-[75%]",
                           m.role === 'user' ? "items-end text-right" : "items-start text-left"
                         )}>
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 opacity-50 px-1">
+                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-600 px-1 font-outfit">
                                 {m.role === 'user' ? 'Transmission' : 'AI Architect'}
                             </p>
                             <div className={cn(
-                                "max-w-[100%] prose prose-invert text-sm leading-[1.8] font-medium tracking-wide",
-                                m.role === 'user' ? "text-purple-50" : "text-zinc-300"
+                                "prose prose-invert prose-p:leading-relaxed prose-pre:bg-zinc-900/50 prose-pre:border prose-pre:border-white/10 text-sm md:text-[15px] font-medium tracking-normal",
+                                m.role === 'user' ? "text-purple-50" : "text-zinc-200"
                             )}>
                                 {m.content}
                             </div>
@@ -103,13 +130,23 @@ export default function OmniiChatPage() {
             </div>
         </div>
 
+        {/* Scroll To Bottom Button */}
+        {showScrollButton && (
+          <button 
+            onClick={scrollToBottom}
+            className="absolute bottom-28 left-1/2 -translate-x-1/2 p-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-zinc-400 hover:text-white hover:bg-white/10 transition-all z-40 animate-bounce"
+          >
+            <ArrowDownCircle className="w-5 h-5" />
+          </button>
+        )}
+
         {/* Floating Input Rail */}
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-full max-w-3xl px-6 z-30">
+        <div className="absolute bottom-6 md:bottom-10 left-1/2 -translate-x-1/2 w-full max-w-2xl lg:max-w-3xl px-4 md:px-6 z-30">
             <form onSubmit={handleSubmit} className="relative group">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-purple-500/20 to-blue-600/20 rounded-3xl blur opacity-30 group-focus-within:opacity-100 transition duration-1000"></div>
-                <div className="relative flex items-center bg-[#0C0C0C]/80 backdrop-blur-2xl border border-white/10 rounded-3xl p-2.5 shadow-2xl">
+                <div className="absolute -inset-1 bg-gradient-to-r from-purple-600/20 via-blue-600/20 to-indigo-600/20 rounded-[2.5rem] blur-xl opacity-0 group-focus-within:opacity-100 transition duration-1000"></div>
+                <div className="relative flex items-center bg-[#0C0C0C]/90 backdrop-blur-3xl border border-white/10 rounded-[2rem] p-1.5 md:p-2 shadow-2xl ring-1 ring-white/5">
                     <input
-                        className="flex-1 bg-transparent px-6 py-4 outline-none text-sm font-medium placeholder:text-zinc-600 tracking-wide"
+                        className="flex-1 bg-transparent px-6 py-4 md:py-5 outline-none text-sm md:text-base font-medium placeholder:text-zinc-600 tracking-wide"
                         value={input}
                         onChange={handleInputChange}
                         placeholder="Talk to OmniiChat..."
@@ -117,17 +154,17 @@ export default function OmniiChatPage() {
                     <button
                         type="submit"
                         disabled={isLoading || !input.trim()}
-                        className="p-4 bg-white text-black rounded-2xl hover:bg-zinc-200 transition-all disabled:opacity-30 flex items-center justify-center shadow-xl active:scale-95"
+                        className="p-4 md:p-5 bg-white text-black rounded-[1.5rem] hover:bg-zinc-200 transition-all disabled:opacity-20 flex items-center justify-center shadow-2xl active:scale-95 shrink-0"
                     >
                         {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                     </button>
                 </div>
             </form>
-            <p className="text-center mt-4 text-[9px] text-zinc-700 font-bold uppercase tracking-[0.4em] opacity-40">
-                Processed via Hyper-Streaming Neural Link 1.0
+            <p className="hidden sm:block text-center mt-4 text-[8px] text-zinc-700 font-black uppercase tracking-[0.6em] opacity-40">
+                Authorized Engineering Terminal Link 1.0
             </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

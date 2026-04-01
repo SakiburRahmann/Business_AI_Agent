@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --font-inter: var(--font-inter), ui-sans-serif, system-ui;
+  --font-outfit: var(--font-outfit), ui-sans-serif, system-ui;
+}
+
+:root {
+  --background: #020202;
+  --foreground: #f4f4f5;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter);
+}
+
+/* Custom Scrollbar for High-Fidelity UI */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #18181b;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #27272a;
+}
+
+/* Base Typographic Standards */
+h1, h2, h3, h4 {
+  font-family: var(--font-outfit);
+}
