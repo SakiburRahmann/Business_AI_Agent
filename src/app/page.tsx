@@ -1,6 +1,6 @@
 'use client';
 
-import { useChat } from 'ai/react';
+import { useChat, Message } from '@ai-sdk/react';
 import { Send, Loader2, Sparkles, User, Bot, Command, ArrowDownCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
@@ -97,7 +97,7 @@ export default function OmniiChatPage() {
           className="flex-1 overflow-y-auto pt-8 pb-32 px-6 sm:px-12 space-y-10"
         >
             <div className="max-w-3xl mx-auto space-y-10">
-                {messages.map((m) => (
+                {messages.map((m: Message) => (
                     <div key={m.id} className={cn(
                         "group flex gap-5 md:gap-8 animate-in fade-in slide-in-from-bottom-2 duration-700",
                         m.role === 'user' ? "flex-row-reverse" : "flex-row"
