@@ -1,6 +1,7 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import { DefaultChatMessages } from '@/lib/ai/client';
 import { Send, Loader2, Sparkles, User, Bot, LogOut, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -18,13 +19,13 @@ export default function ChatPage() {
     const [inputValue, setInputValue] = useState('');
     const scrollRef = useRef<HTMLDivElement>(null);
     
-    // AI SDK v6.x unified hook
+    // AI SDK v6.x unified hook - Refactored for Transport Protocol 1.0
     const { messages, sendMessage, status, error } = useChat({
-        api: '/api/chat',
-        initialMessages: DefaultChatMessages,
+        transport: new DefaultChatTransport({ api: '/api/chat' }),
+        messages: DefaultChatMessages,
     });
 
-    const isLoading = status === 'streaming' || status === 'submitting';
+    const isLoading = status === 'streaming' || status === 'submitted';
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -39,7 +40,10 @@ export default function ChatPage() {
         const contentSnapshot = inputValue;
         setInputValue('');
         try {
-            await sendMessage(contentSnapshot);
+            // Strict v6 Message Synthesis
+            await sendMessage({ 
+                parts: [{ type: 'text', text: contentSnapshot }] 
+            });
         } catch (err) {
             console.error('Neural Link Interruption:', err);
         }
