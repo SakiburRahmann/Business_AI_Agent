@@ -1,6 +1,7 @@
 'use client';
 
 import { useChat, UIMessage } from '@ai-sdk/react';
+import { HttpChatTransport } from 'ai';
 import { Send, Loader2, Sparkles, User, Bot, Command, ArrowDownCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
@@ -12,9 +13,9 @@ import { useEffect, useRef, useState } from 'react';
  */
 export default function OmniiChatPage() {
   const { messages, status, error, sendMessage, regenerate } = useChat({
-    api: '/api/chat',
-    initialMessages: [
-      { id: 'boot', role: 'assistant', content: "OmniiChat 1.0 Systems Online. Pure Conversational Intelligence initialized. How can I help you architect your vision today?" }
+    transport: new HttpChatTransport({ url: '/api/chat' }),
+    messages: [
+      { id: 'boot', role: 'assistant', parts: [{ type: 'text', text: "OmniiChat 1.0 Systems Online. Pure Conversational Intelligence initialized. How can I help you architect your vision today?" }] }
     ]
   });
 
@@ -136,7 +137,9 @@ export default function OmniiChatPage() {
                                 "prose prose-invert prose-p:leading-relaxed prose-pre:bg-zinc-900/50 prose-pre:border prose-pre:border-white/10 text-sm md:text-[15px] font-medium tracking-normal",
                                 m.role === 'user' ? "text-purple-50" : "text-zinc-200"
                             )}>
-                                {m.content}
+                                {m.parts.map((part, index) => (
+                                    part.type === 'text' ? <p key={index}>{part.text}</p> : null
+                                ))}
                             </div>
                         </div>
                     </div>
