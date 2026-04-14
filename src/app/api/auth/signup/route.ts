@@ -28,6 +28,6 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (err: any) {
-    return NextResponse.json({ error: 'Initialization failure' }, { status: 500 });
+    return NextResponse.json({ error: 'Account creation failed' }, { status: 500 });
   }
 }
