@@ -1,12 +1,12 @@
 import { model } from '@/lib/ai/client';
-import { streamText, convertToCoreMessages } from 'ai';
+import { streamText, convertToModelMessages } from 'ai';
 
 /**
  * OmniiChat 1.0 - Unified Response Engine
  * Priority: Instant character-by-character delivery.
  * Hardened with Error Resilience 1.0.
  */
-export const maxDuration = 60; // Max edge runtime duration
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
@@ -25,7 +25,7 @@ export async function POST(req: Request) {
       }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
 
-    const result = await streamText({
+    const result = streamText({
       model,
       system: `
         You are OmniiChat 1.0, a world-class AI conversationalist built by Sakibur Rahman.
@@ -40,16 +40,17 @@ export async function POST(req: Request) {
         - Sophisticated, professional, yet approachable.
         - Intelligent and systems-aware.
       `,
-      messages: convertToCoreMessages(messages),
+      messages: await convertToModelMessages(messages),
     });
 
-    return result.toDataStreamResponse();
-  } catch (error: any) {
-    console.error("DIAGNOSTIC TRACE (API/CHAT):", error.message);
+    return result.toUIMessageStreamResponse();
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'An unexpected interruption occurred during synthesis.';
+    console.error('DIAGNOSTIC TRACE (API/CHAT):', message);
     return new Response(
       JSON.stringify({ 
-        error: "Neural Link Divergence", 
-        message: error.message || "An unexpected interruption occurred during synthesis." 
+        error: 'Neural Link Divergence', 
+        message,
       }), 
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

@@ -1,7 +1,8 @@
 'use client';
 
-import { useChat, UIMessage } from '@ai-sdk/react';
-import { HttpChatTransport } from 'ai';
+import { useChat } from '@ai-sdk/react';
+import type { UIMessage } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
 import { Send, Loader2, Sparkles, User, Bot, Command, ArrowDownCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
@@ -13,23 +14,27 @@ import { useEffect, useRef, useState } from 'react';
  */
 export default function OmniiChatPage() {
   const { messages, status, error, sendMessage, regenerate } = useChat({
-    transport: new HttpChatTransport({ url: '/api/chat' }),
+    transport: new DefaultChatTransport({ api: '/api/chat' }),
     messages: [
-      { id: 'boot', role: 'assistant', parts: [{ type: 'text', text: "OmniiChat 1.0 Systems Online. Pure Conversational Intelligence initialized. How can I help you architect your vision today?" }] }
-    ]
+      {
+        id: 'boot',
+        role: 'assistant' as const,
+        parts: [{ type: 'text' as const, text: 'OmniiChat 1.0 Systems Online. Pure Conversational Intelligence initialized. How can I help you architect your vision today?' }],
+      },
+    ],
   });
 
   const [input, setInput] = useState('');
   const isLoading = status === 'submitted' || status === 'streaming';
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setInput(e.target.value);
   };
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!input.trim() || isLoading) return;
-    sendMessage(input);
+    sendMessage({ text: input });
     setInput('');
   };
 
@@ -56,6 +61,16 @@ export default function OmniiChatPage() {
   const scrollToBottom = () => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
     setShowScrollButton(false);
+  };
+
+  /**
+   * Extracts displayable text from a UIMessage's parts array.
+   */
+  const getMessageText = (message: UIMessage): string => {
+    return message.parts
+      .filter((part): part is { type: 'text'; text: string } => part.type === 'text')
+      .map((part) => part.text)
+      .join('');
   };
 
   return (
@@ -137,13 +152,21 @@ export default function OmniiChatPage() {
                                 "prose prose-invert prose-p:leading-relaxed prose-pre:bg-zinc-900/50 prose-pre:border prose-pre:border-white/10 text-sm md:text-[15px] font-medium tracking-normal",
                                 m.role === 'user' ? "text-purple-50" : "text-zinc-200"
                             )}>
-                                {m.parts.map((part, index) => (
-                                    part.type === 'text' ? <p key={index}>{part.text}</p> : null
-                                ))}
+                                {getMessageText(m)}
                             </div>
                         </div>
                     </div>
                 ))}
+
+                {/* Loading Indicator */}
+                {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
+                  <div className="flex gap-5 md:gap-8 items-center pl-1 animate-pulse">
+                    <div className="w-9 h-9 md:w-11 md:h-11 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center">
+                      <Loader2 className="w-5 h-5 text-blue-400/50 animate-spin" />
+                    </div>
+                    <div className="h-4 w-32 bg-white/[0.05] rounded-full" />
+                  </div>
+                )}
 
                 {/* Error Boundary - Premium Diagnostic UI */}
                 {error && (
