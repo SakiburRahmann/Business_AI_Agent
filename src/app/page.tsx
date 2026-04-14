@@ -113,7 +113,7 @@ export default function OmniiChatPage() {
                 <span className="text-[9px] font-black uppercase tracking-[0.4em] text-zinc-500">Neural Link Stable</span>
             </div>
             <div className="flex items-center gap-4">
-               <span className="text-[10px] font-bold text-zinc-600 hidden sm:inline uppercase tracking-widest">Gemini 2.0 Flash</span>
+               <span className="text-[10px] font-bold text-zinc-600 hidden sm:inline uppercase tracking-widest">Gemini 2.5 Flash</span>
             </div>
         </header>
 
