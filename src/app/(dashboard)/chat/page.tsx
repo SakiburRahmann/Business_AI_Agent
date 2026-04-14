@@ -3,7 +3,9 @@
 import { useChat } from '@ai-sdk/react';
 import type { UIMessage } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { Send, Loader2, Sparkles, User, Bot, Command, ArrowDownCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { Send, Loader2, Sparkles, User, Bot, Command, ArrowDownCircle, AlertCircle, RefreshCw, LogOut } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 
@@ -13,6 +15,8 @@ import { useEffect, useRef, useState } from 'react';
  * Optimized for Mobile + AI Streaming.
  */
 export default function OmniiChatPage() {
+  const router = useRouter();
+  const supabase = createClient();
   const { messages, status, error, sendMessage, regenerate } = useChat({
     transport: new DefaultChatTransport({ api: '/api/chat' }),
     messages: [
@@ -63,6 +67,12 @@ export default function OmniiChatPage() {
     setShowScrollButton(false);
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+    router.refresh();
+  };
+
   /**
    * Extracts displayable text from a UIMessage's parts array.
    */
@@ -88,6 +98,13 @@ export default function OmniiChatPage() {
             <button className="w-full text-left px-4 py-3 rounded-2xl bg-white/[0.03] border border-white/5 text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:text-white hover:bg-white/[0.05] transition-all flex items-center gap-3">
                 <Sparkles className="w-4 h-4 text-purple-400" />
                 <span className="hidden lg:inline">Core Synthesis</span>
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="w-full text-left px-4 py-3 rounded-2xl bg-white/[0.03] border border-white/5 text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:text-red-400 hover:bg-red-500/5 transition-all flex items-center gap-3 group/logout"
+            >
+                <LogOut className="w-4 h-4 text-zinc-600 group-hover/logout:text-red-400 transition-colors" />
+                <span className="hidden lg:inline">Terminate session</span>
             </button>
          </div>
          
