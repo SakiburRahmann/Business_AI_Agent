@@ -4,19 +4,19 @@ import { useChat } from '@ai-sdk/react';
 import type { UIMessage } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { Send, Loader2, Sparkles, User, Bot, Command, ArrowDownCircle, AlertCircle, RefreshCw, LogOut } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 
 /**
  * OmniiChat 1.0 - The Masterpiece Interface
- * Designed to feel like Apple + Gemini.
  * Optimized for Mobile + AI Streaming.
+ * Local Auth enabled.
  */
 export default function OmniiChatPage() {
   const router = useRouter();
-  const supabase = createClient();
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
+
   const { messages, status, error, sendMessage, regenerate } = useChat({
     transport: new DefaultChatTransport({ api: '/api/chat' }),
     messages: [
@@ -68,9 +68,13 @@ export default function OmniiChatPage() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/');
-    router.refresh();
+    try {
+        await fetch('/api/auth/logout', { method: 'POST' });
+        router.push('/');
+        router.refresh();
+    } catch (err) {
+        console.error('Termination failure');
+    }
   };
 
   /**

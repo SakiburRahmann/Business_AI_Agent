@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { Cpu, ArrowRight, Loader2, ShieldAlert, Mail, Lock } from 'lucide-react';
 
 export default function LoginPage() {
@@ -18,15 +17,16 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
-    
     try {
-        const { error: loginError } = await supabase.auth.signInWithPassword({
-            email,
-            password,
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
         });
 
-        if (loginError) throw loginError;
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || 'Identity decryption failed.');
         
         router.push('/chat');
         router.refresh();

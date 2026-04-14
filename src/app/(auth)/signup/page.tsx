@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { Cpu, ArrowRight, Loader2, ShieldCheck, Mail, Lock } from 'lucide-react';
 
 export default function SignupPage() {
@@ -18,18 +17,19 @@ export default function SignupPage() {
     setLoading(true);
     setError(null);
 
-    const supabase = createClient();
-    
     try {
-        const { error: signUpError } = await supabase.auth.signUp({
-            email,
-            password,
+        const res = await fetch('/api/auth/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
         });
 
-        if (signUpError) throw signUpError;
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || 'Initialization failed.');
         
-        alert('Initialization sequence successful! Please verify identity via email.');
-        router.push('/login');
+        router.push('/chat');
+        router.refresh();
     } catch (err: any) {
         setError(err.message || 'Initialization failed. Please check credentials.');
     } finally {
@@ -38,7 +38,7 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#020202] flex items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-[#020202] flex items-center justify-center p-6 relative overflow-hidden text-zinc-100">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-600/10 blur-[120px] rounded-full" />
       
       <div className="relative z-10 w-full max-w-md">
@@ -62,7 +62,7 @@ export default function SignupPage() {
                 </div>
             )}
 
-            <form onSubmit={handleSignup} className="space-y-6">
+            <form onSubmit={handleSignup} className="space-y-6 text-zinc-100">
                 <div className="space-y-2">
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Identity (Email)</label>
                     <div className="relative group">
