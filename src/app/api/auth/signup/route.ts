@@ -11,13 +11,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email and password required' }, { status: 400 });
     }
 
-    if (findUserByEmail(email)) {
-      return NextResponse.json({ error: 'Identity already established' }, { status: 400 });
+    if (await findUserByEmail(email)) {
+      return NextResponse.json({ error: 'Account already exists' }, { status: 400 });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = { email, password: hashedPassword };
-    saveUser(user);
+    await saveUser(user);
 
     // Create session
     const expires = new Date(Date.now() + 2 * 60 * 60 * 1000);

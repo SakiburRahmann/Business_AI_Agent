@@ -7,9 +7,9 @@ export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
 
-    const user = findUserByEmail(email);
+    const user = await findUserByEmail(email);
     if (!user) {
-      return NextResponse.json({ error: 'Identity not found' }, { status: 401 });
+      return NextResponse.json({ error: 'Account not found' }, { status: 401 });
     }
 
     const passwordsMatch = await bcrypt.compare(password, user.password);

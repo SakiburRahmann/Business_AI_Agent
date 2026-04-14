@@ -26,12 +26,12 @@ export default function SignupPage() {
 
         const data = await res.json();
 
-        if (!res.ok) throw new Error(data.error || 'Initialization failed.');
+        if (!res.ok) throw new Error(data.error || 'Account creation failed.');
         
         router.push('/chat');
         router.refresh();
     } catch (err: any) {
-        setError(err.message || 'Initialization failed. Please check credentials.');
+        setError(err.message || 'Signup failed. Please check your information.');
     } finally {
         setLoading(false);
     }
@@ -50,13 +50,13 @@ export default function SignupPage() {
                     </div>
                 </div>
             </Link>
-            <h1 className="text-3xl font-black text-white font-outfit uppercase tracking-tighter mb-2">Protocol Initialization</h1>
-            <p className="text-zinc-500 text-sm tracking-tight">Establish your secure link to the Omnii Infrastructure.</p>
+            <h1 className="text-3xl font-black text-white font-outfit uppercase tracking-tighter mb-2">Create Account</h1>
+            <p className="text-zinc-500 text-sm tracking-tight font-medium">Join OmniiChat and start building today.</p>
         </div>
 
         <div className="bg-zinc-900/40 backdrop-blur-2xl border border-white/[0.05] rounded-[32px] p-8 shadow-2xl relative">
             {error && (
-                <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
+                <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2 font-inter">
                     <ShieldCheck className="w-3 h-3" />
                     {error}
                 </div>
@@ -64,7 +64,7 @@ export default function SignupPage() {
 
             <form onSubmit={handleSignup} className="space-y-6 text-zinc-100">
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Identity (Email)</label>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Email Address</label>
                     <div className="relative group">
                         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                             <Mail className="w-4 h-4 text-zinc-600 group-focus-within:text-purple-400 transition-colors" />
@@ -74,14 +74,14 @@ export default function SignupPage() {
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full bg-black/40 border border-white/[0.05] rounded-2xl py-4 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-zinc-700"
-                            placeholder="architect@infrastructure.com"
+                            className="w-full bg-black/40 border border-white/[0.05] rounded-2xl py-4 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-zinc-700 font-medium"
+                            placeholder="architect@business.com"
                         />
                     </div>
                 </div>
 
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Access Cipher (Password)</label>
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500 ml-1">Password</label>
                     <div className="relative group">
                         <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                             <Lock className="w-4 h-4 text-zinc-600 group-focus-within:text-purple-400 transition-colors" />
@@ -91,7 +91,7 @@ export default function SignupPage() {
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full bg-black/40 border border-white/[0.05] rounded-2xl py-4 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-zinc-700"
+                            className="w-full bg-black/40 border border-white/[0.05] rounded-2xl py-4 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-purple-500/50 transition-all placeholder:text-zinc-700 font-medium"
                             placeholder="••••••••"
                         />
                     </div>
@@ -104,14 +104,14 @@ export default function SignupPage() {
                     {loading ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                        <>Establish Link <ArrowRight className="w-4 h-4" /></>
+                        <>Sign Up <ArrowRight className="w-4 h-4" /></>
                     )}
                 </button>
             </form>
 
             <div className="mt-8 pt-8 border-t border-white/[0.02] text-center text-xs">
-                <p className="text-zinc-600">
-                    Already authenticated? <Link href="/login" className="text-white hover:text-purple-400 transition-colors">Decrypt session</Link>
+                <p className="text-zinc-600 font-medium">
+                    Already have an account? <Link href="/login" className="text-white hover:text-purple-400 transition-colors">Login here</Link>
                 </p>
             </div>
         </div>
