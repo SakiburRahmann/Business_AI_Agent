@@ -1,7 +1,6 @@
 'use client';
 
-import { useChat } from 'ai/react';
-import { Message } from 'ai';
+import { useChat, UIMessage } from '@ai-sdk/react';
 import { Send, Loader2, Sparkles, User, Bot, Command, ArrowDownCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
@@ -12,12 +11,26 @@ import { useEffect, useRef, useState } from 'react';
  * Optimized for Mobile + AI Streaming.
  */
 export default function OmniiChatPage() {
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error, reload } = useChat({
+  const { messages, status, error, sendMessage, regenerate } = useChat({
     api: '/api/chat',
     initialMessages: [
       { id: 'boot', role: 'assistant', content: "OmniiChat 1.0 Systems Online. Pure Conversational Intelligence initialized. How can I help you architect your vision today?" }
     ]
   });
+
+  const [input, setInput] = useState('');
+  const isLoading = status === 'submitted' || status === 'streaming';
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement> | React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value);
+  };
+
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!input.trim() || isLoading) return;
+    sendMessage(input);
+    setInput('');
+  };
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -98,7 +111,7 @@ export default function OmniiChatPage() {
           className="flex-1 overflow-y-auto pt-8 pb-32 px-6 sm:px-12 space-y-10"
         >
             <div className="max-w-3xl mx-auto space-y-10">
-                {messages.map((m: Message) => (
+                {messages.map((m: UIMessage) => (
                     <div key={m.id} className={cn(
                         "group flex gap-5 md:gap-8 animate-in fade-in slide-in-from-bottom-2 duration-700",
                         m.role === 'user' ? "flex-row-reverse" : "flex-row"
@@ -143,7 +156,7 @@ export default function OmniiChatPage() {
                         </p>
                       </div>
                       <button 
-                        onClick={() => reload()}
+                        onClick={() => regenerate()}
                         className="w-full flex items-center justify-center space-x-2 text-[10px] font-black uppercase tracking-[0.3em] bg-red-500/20 hover:bg-red-500/30 text-red-100 py-4 rounded-2xl border border-red-500/30 transition-all duration-300 active:scale-[0.98]"
                       >
                         <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} />
