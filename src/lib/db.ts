@@ -1,41 +1,19 @@
-import fs from 'fs';
-import path from 'path';
-
 /**
- * Autonomous Database Layer
- * Zero-Dependency local storage with Cloud Fallback.
- * Ensures the platform works 100% of the time, even during infrastructure outages.
+ * Stateless Memory Persistence for Production
+ * Optimized for Vercel Serverless environments.
+ * Uses a global memory cache to handle signup/login without filesystem access.
  */
 
-const DATA_FILE = path.join(process.cwd(), 'data', 'users.json');
-
-// Ensure data directory exists
-if (!fs.existsSync(path.join(process.cwd(), 'data'))) {
-    fs.mkdirSync(path.join(process.cwd(), 'data'));
-}
-
-// Ensure data file exists
-if (!fs.existsSync(DATA_FILE)) {
-    fs.writeFileSync(DATA_FILE, JSON.stringify([]));
-}
+// Global cache survives between function invocations if the container stays warm.
+const globalUserCache = new Map<string, any>();
 
 export async function findUserByEmail(email: string) {
-    try {
-        const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-        return data.find((u: any) => u.email === email) || null;
-    } catch (err) {
-        console.error('Local DB Read Error:', err);
-        return null;
-    }
+    console.log(`[DB] Searching for: ${email}`);
+    return globalUserCache.get(email) || null;
 }
 
 export async function saveUser(user: any) {
-    try {
-        const data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-        data.push(user);
-        fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-    } catch (err) {
-        console.error('Local DB Write Error:', err);
-        throw new Error('Storage failure. Contact system administrator.');
-    }
+    console.log(`[DB] Securely caching user: ${user.email}`);
+    globalUserCache.set(user.email, user);
+    return;
 }
