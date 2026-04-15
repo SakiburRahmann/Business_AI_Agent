@@ -105,7 +105,7 @@ export default function ChatPage() {
                         </button>
                         <div className="flex flex-col">
                             <h2 className="text-sm font-bold text-white uppercase tracking-widest">Innovation Interface</h2>
-                            <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Gemini 2.5 Flash Protocol</p>
+                            <p className="text-[10px] text-zinc-500 uppercase tracking-widest">Gemini 3 Flash</p>
                         </div>
                     </div>
                 </header>
