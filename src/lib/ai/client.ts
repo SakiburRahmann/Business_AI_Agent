@@ -16,7 +16,8 @@ const googleClient = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY_OVERRIDE || (p1 + p2 + p3)
 });
 
-export const model = googleClient('gemini-3.1-pro-preview');
+// Downgraded to Gemini 1.5 Pro due to 'Quota Exceeded (Limit: 0)' constraints on the 3.1 Pro model.
+export const model = googleClient('gemini-1.5-pro');
 
 export const DefaultChatMessages: UIMessage[] = [
     {
