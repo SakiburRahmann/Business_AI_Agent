@@ -16,8 +16,8 @@ const googleClient = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY_OVERRIDE || (p1 + p2 + p3)
 });
 
-// Downgraded to a verified stable model to eliminate 'Not Found / Unsupported' API errors.
-export const model = googleClient('gemini-1.5-flash');
+// Upgraded to Gemini 2.5 Flash as it is explicitly enabled in the user's free tier quota matrix.
+export const model = googleClient('gemini-2.5-flash');
 
 export const DefaultChatMessages: UIMessage[] = [
     {
