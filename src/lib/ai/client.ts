@@ -17,6 +17,6 @@ export const DefaultChatMessages: UIMessage[] = [
     {
         id: 'welcome',
         role: 'assistant',
-        parts: [{ type: 'text', text: 'System Initialized. I am your strategic AI partner. How may I assist your operations today?' }],
+        parts: [{ type: 'text', text: 'Hello! I am OmniiAi. How can I help you today?' }],
     },
 ];
