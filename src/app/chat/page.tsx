@@ -3,31 +3,73 @@
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { DefaultChatMessages } from '@/lib/ai/client';
-import { Send, Loader2, Sparkles, User, Bot, LogOut, ChevronRight } from 'lucide-react';
+import { Send, Loader2, Sparkles, User, Bot, LogOut, ChevronRight, PlusCircle, MessageSquare } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-/**
- * OmniiChat 1.0 - Professional AI Dashboard
- * Modernized for AI SDK v6 compatibility (April 2026).
- * Zero-Redline Industrial Architecture.
- */
 export default function ChatPage() {
     const router = useRouter();
     const [isSidebarOpen, setSidebarOpen] = useState(true);
     const [inputValue, setInputValue] = useState('');
+    const [conversationId, setConversationId] = useState<string | null>(null);
+    const [historicalConversations, setHistoricalConversations] = useState<any[]>([]);
     const scrollRef = useRef<HTMLDivElement>(null);
     
-    // AI SDK v6.x unified hook - Refactored for Transport Protocol 1.0
-    const { messages, sendMessage, status, error } = useChat({
-        transport: new DefaultChatTransport({ api: '/api/chat' }),
+    // AI SDK v6.x unified hook
+    const { messages, setMessages, sendMessage, status, error } = useChat({
+        transport: new DefaultChatTransport({ 
+            api: '/api/chat',
+            headers: conversationId ? { 'x-conversation-id': conversationId } : {}
+        }),
         messages: DefaultChatMessages,
+        onResponse: (response) => {
+            const id = response.headers.get('x-conversation-id');
+            if (id && id !== conversationId) {
+                setConversationId(id);
+                loadConversationList(); // Refresh list when new one created
+            }
+        }
     });
 
     const isLoading = status === 'streaming' || status === 'submitted';
+
+    // 1. Initial Load: Fetch History & User Profile
+    useEffect(() => {
+        loadConversationList();
+    }, []);
+
+    const loadConversationList = async () => {
+        try {
+            const res = await fetch('/api/conversations');
+            if (res.ok) {
+                const data = await res.json();
+                setHistoricalConversations(data);
+            }
+        } catch (err) {
+            console.error('Failed to load sessions:', err);
+        }
+    };
+
+    const loadConversation = async (id: string) => {
+        setConversationId(id);
+        try {
+            const res = await fetch(`/api/chat/history?conversationId=${id}`);
+            if (res.ok) {
+                const data = await res.json();
+                setMessages(data);
+            }
+        } catch (err) {
+            console.error('Failed to load history:', err);
+        }
+    };
+
+    const startNewChat = () => {
+        setConversationId(null);
+        setMessages(DefaultChatMessages);
+    };
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -42,10 +84,11 @@ export default function ChatPage() {
         const contentSnapshot = inputValue;
         setInputValue('');
         try {
-            // Strict v6 Message Synthesis
             await sendMessage({ 
-                parts: [{ type: 'text', text: contentSnapshot }] 
-            });
+                parts: [{ type: 'text', text: contentSnapshot }],
+                // Passing conversationId in the body for the API
+                ...(conversationId ? { conversationId } : {})
+            } as any);
         } catch (err) {
             console.error('Neural Link Interruption:', err);
         }
@@ -68,18 +111,42 @@ export default function ChatPage() {
                         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.3)]">
                             <Sparkles className="w-4 h-4 text-white" />
                         </div>
-                        <span className="font-bold tracking-tight uppercase text-xs tracking-[0.2em] text-white">OmniiChat</span>
+                        <span className="font-bold tracking-tight uppercase text-xs tracking-[0.2em] text-white">OmniiAi</span>
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
-                    <button className="w-full text-left p-4 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.08] transition-all group">
-                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Current Session</p>
-                        <p className="text-sm font-medium text-zinc-300 truncate">Professional AI Strategy</p>
+                <div className="p-4">
+                    <button 
+                        onClick={startNewChat}
+                        className="w-full flex items-center gap-3 p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 transition-all group"
+                    >
+                        <PlusCircle className="w-4 h-4" />
+                        <span className="text-xs font-bold uppercase tracking-widest">New Session</span>
                     </button>
-                    {error && (
-                        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-[10px] text-red-400 uppercase tracking-widest">
-                            Connection Error: {error.message}
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
+                    <p className="px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Neural History</p>
+                    {historicalConversations.map((conv) => (
+                        <button 
+                            key={conv.id}
+                            onClick={() => loadConversation(conv.id)}
+                            className={cn(
+                                "w-full text-left p-4 rounded-xl transition-all group border",
+                                conversationId === conv.id 
+                                    ? "bg-white/[0.05] border-white/[0.1] text-white" 
+                                    : "bg-transparent border-transparent text-zinc-500 hover:bg-white/[0.03] hover:text-zinc-300"
+                            )}
+                        >
+                            <div className="flex items-center gap-3">
+                                <MessageSquare className="w-4 h-4 shrink-0" />
+                                <p className="text-sm font-medium truncate">{conv.title}</p>
+                            </div>
+                        </button>
+                    ))}
+                    {historicalConversations.length === 0 && (
+                        <div className="p-8 text-center border border-dashed border-white/5 rounded-2xl">
+                            <p className="text-[10px] text-zinc-600 uppercase tracking-widest">No cached patterns found</p>
                         </div>
                     )}
                 </div>
@@ -107,7 +174,7 @@ export default function ChatPage() {
                         </button>
                         <div className="flex flex-col">
                             <h2 className="text-sm font-bold text-white uppercase tracking-widest">Innovation Interface</h2>
-                            <p className="text-[10px] text-cyan-400 font-bold animate-pulse uppercase tracking-widest">Gemma 4 · Multi-Model</p>
+                            <p className="text-[10px] text-cyan-400 font-bold animate-pulse uppercase tracking-widest">Gemma 4 · Strategic Intelligence</p>
                         </div>
                     </div>
                 </header>
@@ -118,11 +185,10 @@ export default function ChatPage() {
                 >
                     <div className="max-w-4xl mx-auto space-y-12">
                         {messages.map((m) => {
-                            // Unified SDK v6 content extraction
                             const messageText = m.parts
-                                .filter(p => p.type === 'text')
+                                ?.filter(p => p.type === 'text')
                                 .map(p => p.text)
-                                .join('\n');
+                                .join('\n') || (m as any).content || '';
 
                             return (
                                 <div 
@@ -171,6 +237,11 @@ export default function ChatPage() {
                                 </div>
                             </div>
                         )}
+                        {error && (
+                            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-[10px] text-red-400 uppercase tracking-widest text-center">
+                                Neural Link Interrupted: {error.message}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -184,7 +255,7 @@ export default function ChatPage() {
                             <input
                                 value={inputValue}
                                 onChange={(e) => setInputValue(e.target.value)}
-                                placeholder="Message OmniiChat..."
+                                placeholder="Communicate with OmniiAi..."
                                 className="flex-1 bg-transparent border-none py-4 text-sm focus:outline-none placeholder:text-zinc-600 text-zinc-100"
                             />
                             <button

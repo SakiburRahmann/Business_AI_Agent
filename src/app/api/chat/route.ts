@@ -1,15 +1,49 @@
 import { model } from '@/lib/ai/client';
 import { streamText, convertToModelMessages } from 'ai';
+import { createClient } from '@/lib/supabase/server';
 
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    const { messages } = await req.json();
+    const { messages, conversationId } = await req.json();
 
     if (!messages || !Array.isArray(messages)) {
       return new Response('Invalid transmission: Missing neural patterns.', { status: 400 });
     }
+
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return new Response('Unauthorized: Neural link rejected.', { status: 401 });
+    }
+
+    let currentConversationId = conversationId;
+
+    // 1. Ensure conversation exists
+    if (!currentConversationId) {
+      const { data: conversation, error: convError } = await supabase
+        .from('conversations')
+        .insert({ 
+          user_id: user.id,
+          title: messages[messages.length - 1]?.content?.substring(0, 50) || 'New Conversation'
+        })
+        .select()
+        .single();
+
+      if (convError) throw convError;
+      currentConversationId = conversation.id;
+    }
+
+    // 2. Save User Message
+    const lastMessage = messages[messages.length - 1];
+    await supabase.from('messages').insert({
+      conversation_id: currentConversationId,
+      user_id: user.id,
+      role: 'user',
+      content: lastMessage.content
+    });
 
     const systemPrompt = `
       You are OmniiAi (also referred to as OmniiChat), an advanced artificial intelligence and world-class conversationalist.
@@ -37,17 +71,30 @@ export async function POST(req: Request) {
       model: model,
       system: systemPrompt,
       messages: convertedMessages,
+      onFinish: async ({ text }) => {
+        // 3. Save Assistant Message on Finish
+        await supabase.from('messages').insert({
+          conversation_id: currentConversationId,
+          user_id: user.id,
+          role: 'assistant',
+          content: text
+        });
+      }
     });
 
-    return result.toUIMessageStreamResponse();
+    return result.toUIMessageStreamResponse({
+        headers: {
+            'x-conversation-id': currentConversationId
+        }
+    });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'An unexpected interruption occurred during synthesis.';
     console.error('DIAGNOSTIC TRACE (API/CHAT):', message);
     return new Response(
-      JSON.stringify({
-        error: 'Neural Link Divergence',
+      JSON.stringify({ 
+        error: 'Neural Link Divergence', 
         message,
-      }),
+      }), 
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
