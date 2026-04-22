@@ -1,0 +1,23 @@
+name: Supabase Database Setup
+
+on:
+  push:
+    paths:
+      - 'data/schema.sql'
+  workflow_dispatch:
+
+jobs:
+  setup-db:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PostgreSQL Client
+        run: sudo apt-get install -y postgresql-client
+
+      - name: Execute SQL Schema
+        env:
+          PGPASSWORD: OmniiAi_Production_DB_Ref_2026
+        run: |
+          psql -h aws-1-ap-south-1.pooler.supabase.com -p 6543 -d postgres -U postgres.lwgziphajgqjkwqpfdop -f data/schema.sql
