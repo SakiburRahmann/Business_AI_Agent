@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import sql from '@/lib/db';
 
 export async function GET(req: Request) {
   try {
@@ -13,19 +14,20 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let query = supabase
-      .from('messages')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: true });
-
+    let messages;
     if (chatId) {
-      query = query.eq('chat_id', chatId);
+        messages = await sql`
+            SELECT * FROM public.messages 
+            WHERE chat_id = ${chatId} AND user_id = ${user.id}
+            ORDER BY created_at ASC
+        `;
+    } else {
+        messages = await sql`
+            SELECT * FROM public.messages 
+            WHERE user_id = ${user.id}
+            ORDER BY created_at ASC
+        `;
     }
-
-    const { data: messages, error } = await query;
-
-    if (error) throw error;
 
     // Convert to AI SDK format
     const formattedMessages = messages.map(m => ({
@@ -37,6 +39,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json(formattedMessages);
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Chat History Error (Direct SQL):', error.message || error);
+    return NextResponse.json({ error: 'Failed to retrieve history' }, { status: 500 });
   }
 }

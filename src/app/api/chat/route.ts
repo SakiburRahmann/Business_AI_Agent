@@ -1,6 +1,7 @@
 import { model } from '@/lib/ai/client';
 import { streamText, convertToModelMessages } from 'ai';
 import { createClient } from '@/lib/supabase/server';
+import sql from '@/lib/db';
 
 export const maxDuration = 60;
 
@@ -21,55 +22,37 @@ export async function POST(req: Request) {
 
     let currentChatId = conversationId;
 
-    // 1. Ensure chat exists
+    // 1. Ensure chat exists (Direct SQL)
     if (currentChatId) {
-        const { data: existingChat } = await supabase
-            .from('chats')
-            .select('id')
-            .eq('id', currentChatId)
-            .single();
+        const [existingChat] = await sql`
+            SELECT id FROM public.chats 
+            WHERE id = ${currentChatId} AND user_id = ${user.id}
+        `;
         
         if (!existingChat) {
-            const { error: chatError } = await supabase
-                .from('chats')
-                .insert({ 
-                    id: currentChatId,
-                    user_id: user.id,
-                    topic: messages[messages.length - 1]?.content?.substring(0, 50) || 'New Chat'
-                });
-            
-            if (chatError) throw chatError;
+            await sql`
+                INSERT INTO public.chats (id, user_id, topic)
+                VALUES (${currentChatId}, ${user.id}, ${messages[messages.length - 1]?.content?.substring(0, 50) || 'New Chat'})
+            `;
         }
     } else {
-        const { data: chat, error: chatError } = await supabase
-            .from('chats')
-            .insert({ 
-                user_id: user.id,
-                topic: messages[messages.length - 1]?.content?.substring(0, 50) || 'New Chat'
-            })
-            .select()
-            .single();
-
-        if (chatError) throw chatError;
+        const [chat] = await sql`
+            INSERT INTO public.chats (user_id, topic)
+            VALUES (${user.id}, ${messages[messages.length - 1]?.content?.substring(0, 50) || 'New Chat'})
+            RETURNING id
+        `;
         currentChatId = chat.id;
     }
 
-    // 2. Save User Message
+    // 2. Save User Message (Direct SQL)
     const lastMessage = messages[messages.length - 1];
-    await supabase.from('messages').insert({
-      chat_id: currentChatId,
-      user_id: user.id,
-      role: 'user',
-      content: lastMessage.content
-    });
+    await sql`
+        INSERT INTO public.messages (chat_id, user_id, role, content)
+        VALUES (${currentChatId}, ${user.id}, 'user', ${lastMessage.content})
+    `;
 
     const systemPrompt = `
-      You are OmniiAi, an advanced AI assistant.
-      
-      IDENTITY:
-      - Name: OmniiAi.
-      - Developer: Sakibur Rahman.
-      - If asked, state you are OmniiAi, developed by Sakibur Rahman.
+      You are OmniiAi, an advanced AI assistant developed by Sakibur Rahman.
       
       GUIDELINES:
       1. Provide helpful, intelligent, and accurate responses.
@@ -84,13 +67,11 @@ export async function POST(req: Request) {
       system: systemPrompt,
       messages: convertedMessages,
       onFinish: async ({ text }) => {
-        // 3. Save Assistant Message on Finish
-        await supabase.from('messages').insert({
-          chat_id: currentChatId,
-          user_id: user.id,
-          role: 'assistant',
-          content: text
-        });
+        // 3. Save Assistant Message on Finish (Direct SQL)
+        await sql`
+            INSERT INTO public.messages (chat_id, user_id, role, content)
+            VALUES (${currentChatId}, ${user.id}, 'assistant', ${text})
+        `;
       }
     });
 
@@ -100,11 +81,11 @@ export async function POST(req: Request) {
         }
     });
   } catch (error: any) {
-    console.error('Chat API Error:', error.message || error);
+    console.error('Chat API Error (Direct SQL):', error.message || error);
     return new Response(
       JSON.stringify({ 
-        error: 'Internal Server Error', 
-        message: error.message || 'An unexpected error occurred.',
+        error: 'Database Error', 
+        message: 'A direct database connection issue occurred. Please try again.',
       }), 
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
