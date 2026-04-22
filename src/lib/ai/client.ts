@@ -12,8 +12,9 @@ const googleClient = createGoogleGenerativeAI({
   apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY_OVERRIDE
 });
 
-// Migrated to Gemini 3.1 Pro (April 2026) for state-of-the-art reasoning capabilities.
-export const model = googleClient('gemini-3.1-pro-preview');
+// Using Gemini 2.5 Flash for production stability and generous free-tier quotas.
+// Gemini 3.1 Pro preview exhausts quota limits too quickly on the free plan.
+export const model = googleClient('gemini-2.5-flash');
 
 export const DefaultChatMessages: UIMessage[] = [
     {
