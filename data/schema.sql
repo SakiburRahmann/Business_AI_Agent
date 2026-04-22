@@ -23,10 +23,13 @@ CREATE POLICY "Users can update their own profile" ON public.profiles
 CREATE TABLE IF NOT EXISTS public.conversations (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES auth.users ON DELETE CASCADE NOT NULL,
-    title TEXT DEFAULT 'New Conversation',
+    title TEXT DEFAULT 'New Chat',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Force PostgREST to reload the schema cache
+NOTIFY pgrst, 'reload schema';
 
 -- Enable RLS on conversations
 ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
