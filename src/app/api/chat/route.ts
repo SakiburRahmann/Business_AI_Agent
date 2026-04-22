@@ -9,31 +9,51 @@ export async function POST(req: Request) {
     const { messages, conversationId } = await req.json();
 
     if (!messages || !Array.isArray(messages)) {
-      return new Response('Invalid transmission: Missing neural patterns.', { status: 400 });
+      return new Response('Invalid request: Missing message data.', { status: 400 });
     }
 
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-      return new Response('Unauthorized: Neural link rejected.', { status: 401 });
+      return new Response('Unauthorized: Please log in to continue.', { status: 401 });
     }
 
     let currentConversationId = conversationId;
 
-    // 1. Ensure conversation exists
-    if (!currentConversationId) {
-      const { data: conversation, error: convError } = await supabase
-        .from('conversations')
-        .insert({ 
-          user_id: user.id,
-          title: messages[messages.length - 1]?.content?.substring(0, 50) || 'New Conversation'
-        })
-        .select()
-        .single();
+    // 1. Ensure conversation exists in database
+    if (currentConversationId) {
+        const { data: existingConv } = await supabase
+            .from('conversations')
+            .select('id')
+            .eq('id', currentConversationId)
+            .single();
+        
+        if (!existingConv) {
+            // Create the conversation if it doesn't exist (client-generated ID)
+            const { error: convError } = await supabase
+                .from('conversations')
+                .insert({ 
+                    id: currentConversationId,
+                    user_id: user.id,
+                    title: messages[messages.length - 1]?.content?.substring(0, 50) || 'New Chat'
+                });
+            
+            if (convError) throw convError;
+        }
+    } else {
+        // Fallback for older clients or missing ID
+        const { data: conversation, error: convError } = await supabase
+            .from('conversations')
+            .insert({ 
+                user_id: user.id,
+                title: messages[messages.length - 1]?.content?.substring(0, 50) || 'New Chat'
+            })
+            .select()
+            .single();
 
-      if (convError) throw convError;
-      currentConversationId = conversation.id;
+        if (convError) throw convError;
+        currentConversationId = conversation.id;
     }
 
     // 2. Save User Message
@@ -46,23 +66,17 @@ export async function POST(req: Request) {
     });
 
     const systemPrompt = `
-      You are OmniiAi (also referred to as OmniiChat), an advanced artificial intelligence and world-class conversationalist.
+      You are OmniiAi, an advanced AI assistant.
       
-      CRITICAL IDENTITY INFORMATION:
-      - Your name is OmniiAi.
-      - You were created and developed by Sakibur Rahman. 
-      - If anyone asks who made you, created you, or what your name is, you MUST state that you are OmniiAi, developed by Sakibur Rahman.
-      - You are NOT developed by Google, OpenAI, or Anthropic. You are the proprietary creation of Sakibur Rahman.
+      IDENTITY:
+      - Name: OmniiAi.
+      - Developer: Sakibur Rahman.
+      - If asked, state you are OmniiAi, developed by Sakibur Rahman.
       
-      CORE BEHAVIOR:
-      1. Talk exactly like an elite, highly intelligent AI.
-      2. Provide helpful, intelligent, and insightful responses.
-      3. Use markdown for beautiful formatting (code blocks, bold, lists).
-      4. Avoid unnecessary fluff. Be direct and premium.
-      
-      PERSONALITY:
-      - Sophisticated, professional, yet approachable.
-      - Intelligent and systems-aware.
+      GUIDELINES:
+      1. Provide helpful, intelligent, and accurate responses.
+      2. Use clean Markdown for formatting.
+      3. Be professional and clear.
     `;
 
     const convertedMessages = await convertToModelMessages(messages);
@@ -87,13 +101,12 @@ export async function POST(req: Request) {
             'x-conversation-id': currentConversationId
         }
     });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'An unexpected interruption occurred during synthesis.';
-    console.error('DIAGNOSTIC TRACE (API/CHAT):', message);
+  } catch (error: any) {
+    console.error('Chat API Error:', error.message || error);
     return new Response(
       JSON.stringify({ 
-        error: 'Neural Link Divergence', 
-        message,
+        error: 'Internal Server Error', 
+        message: error.message || 'An unexpected error occurred.',
       }), 
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

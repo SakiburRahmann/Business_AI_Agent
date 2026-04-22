@@ -18,7 +18,6 @@ export default function ChatPage() {
     const [historicalConversations, setHistoricalConversations] = useState<any[]>([]);
     const scrollRef = useRef<HTMLDivElement>(null);
     
-    // AI SDK v6.x unified hook
     const { messages, setMessages, sendMessage, status, error } = useChat({
         transport: new DefaultChatTransport({ 
             api: '/api/chat',
@@ -28,7 +27,6 @@ export default function ChatPage() {
 
     const isLoading = status === 'streaming' || status === 'submitted';
 
-    // 1. Initial Load: Fetch History & User Profile
     useEffect(() => {
         loadConversationList();
     }, []);
@@ -41,7 +39,7 @@ export default function ChatPage() {
                 setHistoricalConversations(data);
             }
         } catch (err) {
-            console.error('Failed to load sessions:', err);
+            console.error('Failed to load history:', err);
         }
     };
 
@@ -54,7 +52,7 @@ export default function ChatPage() {
                 setMessages(data);
             }
         } catch (err) {
-            console.error('Failed to load history:', err);
+            console.error('Failed to load messages:', err);
         }
     };
 
@@ -88,10 +86,9 @@ export default function ChatPage() {
                 conversationId: currentId
             } as any);
             
-            // Refresh list after a short delay to show the new conversation
             setTimeout(loadConversationList, 2000);
         } catch (err) {
-            console.error('Neural Link Interruption:', err);
+            console.error('Connection Error:', err);
         }
     };
 
@@ -109,25 +106,25 @@ export default function ChatPage() {
             )}>
                 <div className="p-6 border-b border-white/[0.05] flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-[0_0_15px_rgba(6,182,212,0.3)]">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
                             <Sparkles className="w-4 h-4 text-white" />
                         </div>
-                        <span className="font-bold tracking-tight uppercase text-xs tracking-[0.2em] text-white">OmniiAi</span>
+                        <span className="font-bold uppercase text-xs tracking-widest text-white">OmniiAi</span>
                     </div>
                 </div>
 
                 <div className="p-4">
                     <button 
                         onClick={startNewChat}
-                        className="w-full flex items-center gap-3 p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 transition-all group"
+                        className="w-full flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all group"
                     >
                         <PlusCircle className="w-4 h-4" />
-                        <span className="text-xs font-bold uppercase tracking-widest">New Session</span>
+                        <span className="text-xs font-bold uppercase tracking-widest">New Chat</span>
                     </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
-                    <p className="px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Neural History</p>
+                    <p className="px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">History</p>
                     {historicalConversations.map((conv) => (
                         <button 
                             key={conv.id}
@@ -147,7 +144,7 @@ export default function ChatPage() {
                     ))}
                     {historicalConversations.length === 0 && (
                         <div className="p-8 text-center border border-dashed border-white/5 rounded-2xl">
-                            <p className="text-[10px] text-zinc-600 uppercase tracking-widest">No cached patterns found</p>
+                            <p className="text-[10px] text-zinc-600 uppercase tracking-widest">No chats found</p>
                         </div>
                     )}
                 </div>
@@ -174,8 +171,8 @@ export default function ChatPage() {
                             <ChevronRight className={cn("w-5 h-5 text-zinc-400 transition-transform duration-500", isSidebarOpen ? "rotate-180" : "rotate-0")} />
                         </button>
                         <div className="flex flex-col">
-                            <h2 className="text-sm font-bold text-white uppercase tracking-widest">Innovation Interface</h2>
-                            <p className="text-[10px] text-cyan-400 font-bold animate-pulse uppercase tracking-widest">Gemma 4 · Strategic Intelligence</p>
+                            <h2 className="text-sm font-bold text-white uppercase tracking-widest">OmniiAi</h2>
+                            <p className="text-[10px] text-zinc-400 uppercase tracking-widest">Gemma 4 · Assistant</p>
                         </div>
                     </div>
                 </header>
@@ -210,14 +207,14 @@ export default function ChatPage() {
                                         m.role === 'user' ? "items-end" : "items-start"
                                     )}>
                                         <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-                                            {m.role === 'user' ? 'Executive Profile' : 'Omnii Intelligence'}
+                                            {m.role === 'user' ? 'You' : 'OmniiAi'}
                                         </span>
                                         <div className={cn(
                                             "p-6 rounded-2xl text-sm leading-relaxed prose prose-invert max-w-none",
                                             "prose-p:leading-relaxed prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-xl",
                                             m.role === 'user' 
-                                                ? "bg-white text-black font-medium rounded-tr-none prose-p:text-black prose-strong:text-black prose-a:text-blue-600" 
-                                                : "bg-white/[0.03] border border-white/[0.05] text-zinc-300 rounded-tl-none prose-a:text-cyan-400"
+                                                ? "bg-white text-black font-medium rounded-tr-none prose-p:text-black prose-strong:text-black" 
+                                                : "bg-white/[0.03] border border-white/[0.05] text-zinc-300 rounded-tl-none"
                                         )}>
                                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                 {messageText}
@@ -239,8 +236,8 @@ export default function ChatPage() {
                             </div>
                         )}
                         {error && (
-                            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-[10px] text-red-400 uppercase tracking-widest text-center">
-                                Neural Link Interrupted: {error.message}
+                            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-red-400 text-center">
+                                Error: {error.message || 'An unexpected error occurred.'}
                             </div>
                         )}
                     </div>
@@ -256,7 +253,7 @@ export default function ChatPage() {
                             <input
                                 value={inputValue}
                                 onChange={(e) => setInputValue(e.target.value)}
-                                placeholder="Communicate with OmniiAi..."
+                                placeholder="Message OmniiAi..."
                                 className="flex-1 bg-transparent border-none py-4 text-sm focus:outline-none placeholder:text-zinc-600 text-zinc-100"
                             />
                             <button
