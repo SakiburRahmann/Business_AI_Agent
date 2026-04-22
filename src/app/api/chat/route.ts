@@ -19,47 +19,45 @@ export async function POST(req: Request) {
       return new Response('Unauthorized: Please log in to continue.', { status: 401 });
     }
 
-    let currentConversationId = conversationId;
+    let currentChatId = conversationId;
 
-    // 1. Ensure conversation exists in database
-    if (currentConversationId) {
-        const { data: existingConv } = await supabase
-            .from('conversations')
+    // 1. Ensure chat exists
+    if (currentChatId) {
+        const { data: existingChat } = await supabase
+            .from('chats')
             .select('id')
-            .eq('id', currentConversationId)
+            .eq('id', currentChatId)
             .single();
         
-        if (!existingConv) {
-            // Create the conversation if it doesn't exist (client-generated ID)
-            const { error: convError } = await supabase
-                .from('conversations')
+        if (!existingChat) {
+            const { error: chatError } = await supabase
+                .from('chats')
                 .insert({ 
-                    id: currentConversationId,
+                    id: currentChatId,
                     user_id: user.id,
-                    title: messages[messages.length - 1]?.content?.substring(0, 50) || 'New Chat'
+                    topic: messages[messages.length - 1]?.content?.substring(0, 50) || 'New Chat'
                 });
             
-            if (convError) throw convError;
+            if (chatError) throw chatError;
         }
     } else {
-        // Fallback for older clients or missing ID
-        const { data: conversation, error: convError } = await supabase
-            .from('conversations')
+        const { data: chat, error: chatError } = await supabase
+            .from('chats')
             .insert({ 
                 user_id: user.id,
-                title: messages[messages.length - 1]?.content?.substring(0, 50) || 'New Chat'
+                topic: messages[messages.length - 1]?.content?.substring(0, 50) || 'New Chat'
             })
             .select()
             .single();
 
-        if (convError) throw convError;
-        currentConversationId = conversation.id;
+        if (chatError) throw chatError;
+        currentChatId = chat.id;
     }
 
     // 2. Save User Message
     const lastMessage = messages[messages.length - 1];
     await supabase.from('messages').insert({
-      conversation_id: currentConversationId,
+      chat_id: currentChatId,
       user_id: user.id,
       role: 'user',
       content: lastMessage.content
@@ -88,7 +86,7 @@ export async function POST(req: Request) {
       onFinish: async ({ text }) => {
         // 3. Save Assistant Message on Finish
         await supabase.from('messages').insert({
-          conversation_id: currentConversationId,
+          chat_id: currentChatId,
           user_id: user.id,
           role: 'assistant',
           content: text
@@ -98,7 +96,7 @@ export async function POST(req: Request) {
 
     return result.toUIMessageStreamResponse({
         headers: {
-            'x-conversation-id': currentConversationId
+            'x-conversation-id': currentChatId
         }
     });
   } catch (error: any) {

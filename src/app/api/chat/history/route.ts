@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
-    const conversationId = searchParams.get('conversationId');
+    const chatId = searchParams.get('conversationId');
 
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
@@ -19,8 +19,8 @@ export async function GET(req: Request) {
       .eq('user_id', user.id)
       .order('created_at', { ascending: true });
 
-    if (conversationId) {
-      query = query.eq('conversation_id', conversationId);
+    if (chatId) {
+      query = query.eq('chat_id', chatId);
     }
 
     const { data: messages, error } = await query;

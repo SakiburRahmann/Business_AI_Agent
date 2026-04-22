@@ -33,7 +33,7 @@ export default function ChatPage() {
 
     const loadConversationList = async () => {
         try {
-            const res = await fetch('/api/conversations');
+            const res = await fetch('/api/chats');
             if (res.ok) {
                 const data = await res.json();
                 setHistoricalConversations(data);
@@ -138,7 +138,7 @@ export default function ChatPage() {
                         >
                             <div className="flex items-center gap-3">
                                 <MessageSquare className="w-4 h-4 shrink-0" />
-                                <p className="text-sm font-medium truncate">{conv.title}</p>
+                                <p className="text-sm font-medium truncate">{conv.topic || 'Untitled Chat'}</p>
                             </div>
                         </button>
                     ))}
