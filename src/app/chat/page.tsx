@@ -4,6 +4,8 @@ import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { DefaultChatMessages } from '@/lib/ai/client';
 import { Send, Loader2, Sparkles, User, Bot, LogOut, ChevronRight } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { cn } from '@/lib/utils';
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -144,12 +146,15 @@ export default function ChatPage() {
                                             {m.role === 'user' ? 'Executive Profile' : 'Omnii Intelligence'}
                                         </span>
                                         <div className={cn(
-                                            "p-6 rounded-2xl text-sm leading-relaxed",
+                                            "p-6 rounded-2xl text-sm leading-relaxed prose prose-invert max-w-none",
+                                            "prose-p:leading-relaxed prose-pre:bg-black/50 prose-pre:border prose-pre:border-white/10 prose-pre:rounded-xl",
                                             m.role === 'user' 
-                                                ? "bg-white text-black font-medium rounded-tr-none" 
-                                                : "bg-white/[0.03] border border-white/[0.05] text-zinc-300 rounded-tl-none"
+                                                ? "bg-white text-black font-medium rounded-tr-none prose-p:text-black prose-strong:text-black prose-a:text-blue-600" 
+                                                : "bg-white/[0.03] border border-white/[0.05] text-zinc-300 rounded-tl-none prose-a:text-cyan-400"
                                         )}>
-                                            {messageText}
+                                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                                {messageText}
+                                            </ReactMarkdown>
                                         </div>
                                     </div>
                                 </div>

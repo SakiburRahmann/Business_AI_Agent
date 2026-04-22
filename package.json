@@ -25,11 +25,14 @@
     "postgres": "^3.4.9",
     "react": "19.2.5",
     "react-dom": "19.2.5",
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1",
     "resend": "^6.12.2",
     "tailwind-merge": "^3.5.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.19",
     "@types/bcryptjs": "^3.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
