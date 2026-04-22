@@ -22,16 +22,8 @@ export default function ChatPage() {
     const { messages, setMessages, sendMessage, status, error } = useChat({
         transport: new DefaultChatTransport({ 
             api: '/api/chat',
-            headers: conversationId ? { 'x-conversation-id': conversationId } : {}
         }),
         messages: DefaultChatMessages,
-        onResponse: (response) => {
-            const id = response.headers.get('x-conversation-id');
-            if (id && id !== conversationId) {
-                setConversationId(id);
-                loadConversationList(); // Refresh list when new one created
-            }
-        }
     });
 
     const isLoading = status === 'streaming' || status === 'submitted';
@@ -83,12 +75,21 @@ export default function ChatPage() {
         
         const contentSnapshot = inputValue;
         setInputValue('');
+        
+        let currentId = conversationId;
+        if (!currentId) {
+            currentId = crypto.randomUUID();
+            setConversationId(currentId);
+        }
+
         try {
             await sendMessage({ 
                 parts: [{ type: 'text', text: contentSnapshot }],
-                // Passing conversationId in the body for the API
-                ...(conversationId ? { conversationId } : {})
+                conversationId: currentId
             } as any);
+            
+            // Refresh list after a short delay to show the new conversation
+            setTimeout(loadConversationList, 2000);
         } catch (err) {
             console.error('Neural Link Interruption:', err);
         }
