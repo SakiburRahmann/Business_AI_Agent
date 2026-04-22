@@ -8,16 +8,12 @@ import type { UIMessage } from 'ai';
  * Hardware-level Obfuscation to ensure keys never leak in source control
  * and to completely bypass desynced Vercel Environment Variables.
  */
-const p1 = "AIzaSyCO-y";
-const p2 = "6L21lwYwlG";
-const p3 = "--gJ4S32SYJT1zitkHo";
-
 const googleClient = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY_OVERRIDE || (p1 + p2 + p3)
+  apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY_OVERRIDE
 });
 
-// Upgraded to Gemini 2.5 Flash as it is explicitly enabled in the user's free tier quota matrix.
-export const model = googleClient('gemini-2.5-flash');
+// Migrated to Gemini 3.1 Pro (April 2026) for state-of-the-art reasoning capabilities.
+export const model = googleClient('gemini-3.1-pro-preview');
 
 export const DefaultChatMessages: UIMessage[] = [
     {

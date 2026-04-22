@@ -80,7 +80,7 @@ export default function LandingPage() {
                 {
                   icon: <Zap className="w-6 h-6 text-yellow-400" />,
                   title: "High Performance",
-                  desc: "Ultra-low latency inference powered by the latest Gemini 2.5 architecture."
+                  desc: "Ultra-low latency inference powered by the latest Gemini 3.1 architecture."
                 },
                 {
                   icon: <Shield className="w-6 h-6 text-cyan-400" />,

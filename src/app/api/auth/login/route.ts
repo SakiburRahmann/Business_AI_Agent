@@ -1,36 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
-import { findUserByEmail, saveUser } from '@/lib/db';
-import { encrypt } from '@/lib/auth';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: NextRequest) {
   try {
     const { email, password } = await request.json();
+    const supabase = await createClient();
 
-    let user = await findUserByEmail(email);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-    // Stateless Auto-Provisioning: If Vercel wiped the memory cache (cold start),
-    // we seamlessly re-register the user with the provided credentials to bypass the block.
-    if (!user) {
-      console.log(`[AUTH] Cold-start detected. Auto-provisioning session for ${email}`);
-      const hashedPassword = await bcrypt.hash(password, 10);
-      user = { email, password: hashedPassword };
-      await saveUser(user);
-    } else {
-      const passwordsMatch = await bcrypt.compare(password, user.password);
-      if (!passwordsMatch) {
-        return NextResponse.json({ error: 'Invalid access cipher' }, { status: 401 });
-      }
+    if (error) {
+      return NextResponse.json({ error: 'Invalid access cipher' }, { status: 401 });
     }
 
-    // Create session
-    const expires = new Date(Date.now() + 2 * 60 * 60 * 1000);
-    const session = await encrypt({ user: { email }, expires });
-
-    const response = NextResponse.json({ success: true });
-    response.cookies.set('session', session, { expires, httpOnly: true });
-
-    return response;
+    return NextResponse.json({ success: true, user: data.user });
   } catch (err: any) {
     return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
   }
