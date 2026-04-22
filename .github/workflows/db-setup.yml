@@ -20,5 +20,6 @@ jobs:
         env:
           PGPASSWORD: OmniiAi_Production_DB_Ref_2026
         run: |
-          psql -h aws-1-ap-south-1.pooler.supabase.com -p 6543 -d postgres -U postgres.lwgziphajgqjkwqpfdop -c "\d conversations"
+          psql -h aws-1-ap-south-1.pooler.supabase.com -p 6543 -d postgres -U postgres.lwgziphajgqjkwqpfdop -f data/schema.sql
+
 

@@ -86,4 +86,9 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
 -- 5. Backfill existing users (Optional - run once if users already exist)
 INSERT INTO public.profiles (id, email)
 SELECT id, email FROM auth.users
-ON CONFLICT (id) DO NOTHING;
+-- 6. PERMISSIONS
+GRANT ALL ON ALL TABLES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO postgres, anon, authenticated, service_role;
+GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO postgres, anon, authenticated, service_role;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, authenticated, service_role;
+
