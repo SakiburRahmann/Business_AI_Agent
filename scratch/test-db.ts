@@ -1,14 +1,15 @@
 import postgres from 'postgres';
 
 async function testConnection() {
-    console.log('Testing connection with port 5432 (Session Mode)...');
+    console.log('Testing connection with simple password...');
     const sql = postgres({
         host: 'aws-1-ap-south-1.pooler.supabase.com',
-        port: 5432,
+        port: 6543,
         database: 'postgres',
         username: 'postgres.lwgziphajgqjkwqpfdop',
-        password: 'OmniiAi_2026_Secure_DB',
+        password: 'omnii12345678',
         ssl: 'require',
+        prepare: false,
     });
 
     try {
