@@ -17,13 +17,17 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { error } = await supabase
+    const { error, count } = await supabase
       .from('chats')
-      .delete()
+      .delete({ count: 'exact' })
       .eq('id', chatId)
       .eq('user_id', user.id);
 
     if (error) throw error;
+    
+    if (count === 0) {
+      return NextResponse.json({ error: 'Chat not found or access denied' }, { status: 404 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

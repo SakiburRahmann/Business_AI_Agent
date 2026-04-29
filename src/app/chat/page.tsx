@@ -15,12 +15,42 @@ export default function ChatPage() {
     const [isSidebarOpen, setSidebarOpen] = useState(true);
     const [inputValue, setInputValue] = useState('');
     const [conversationId, setConversationId] = useState<string | null>(null);
+    const conversationIdRef = useRef<string | null>(null);
     const [historicalConversations, setHistoricalConversations] = useState<any[]>([]);
     const scrollRef = useRef<HTMLDivElement>(null);
+
+    // Sync ref with state
+    useEffect(() => {
+        conversationIdRef.current = conversationId;
+    }, [conversationId]);
     
     const { messages, setMessages, sendMessage, status, error } = useChat({
         transport: new DefaultChatTransport({ 
             api: '/api/chat',
+            fetch: async (url, init) => {
+                if (!init) return fetch(url, init);
+                
+                const currentId = conversationIdRef.current;
+                if (currentId) {
+                    // Send in headers
+                    init.headers = {
+                        ...init.headers,
+                        'x-conversation-id': currentId
+                    } as any;
+                    
+                    // Also send in body if possible
+                    if (init.body) {
+                        try {
+                            const body = JSON.parse(init.body as string);
+                            body.conversationId = currentId;
+                            init.body = JSON.stringify(body);
+                        } catch (e) {
+                            console.error('Failed to inject conversationId to body:', e);
+                        }
+                    }
+                }
+                return fetch(url, init);
+            }
         }),
         messages: DefaultChatMessages,
     });
@@ -95,15 +125,19 @@ export default function ChatPage() {
         if (!currentId) {
             currentId = crypto.randomUUID();
             setConversationId(currentId);
+            conversationIdRef.current = currentId; // Update ref immediately
         }
 
         try {
+            // Now sendMessage will trigger our custom fetch which injects the ID
             await (sendMessage as any)({ 
                 text: contentSnapshot,
+                // We also pass it here just in case the SDK uses it directly
                 conversationId: currentId
             });
             
-            setTimeout(loadConversationList, 2000);
+            // Refresh list after a delay
+            setTimeout(loadConversationList, 1500);
         } catch (err) {
             console.error('Connection Error:', err);
         }

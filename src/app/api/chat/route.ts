@@ -6,7 +6,9 @@ export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
-    const { messages, conversationId } = await req.json();
+    const body = await req.json();
+    const messages = body.messages;
+    const conversationId = body.conversationId || req.headers.get('x-conversation-id');
 
     if (!messages || !Array.isArray(messages)) {
       return new Response('Invalid request: Missing message data.', { status: 400 });
