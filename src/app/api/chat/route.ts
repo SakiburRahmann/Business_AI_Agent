@@ -83,14 +83,17 @@ export async function POST(req: Request) {
 
     // 2. Resolve the new message content
     const lastMessage = messages[messages.length - 1];
-    if (!lastMessage) throw new Error('No messages found');
+    if (!lastMessage) throw new Error('No messages found in request');
 
+    // Robustly extract user content from various possible formats
     const userContent = lastMessage.content || 
                        lastMessage.text ||
-                       lastMessage.parts?.filter((p: any) => p.type === 'text')?.map((p: any) => p.text).join('\n') || 
+                       (lastMessage.parts && Array.isArray(lastMessage.parts) 
+                          ? lastMessage.parts.filter((p: any) => p.type === 'text').map((p: any) => p.text).join('\n') 
+                          : '') || 
                        '';
 
-    if (userContent) {
+    if (userContent.trim()) {
       // Save to DB immediately
       await supabase
         .from('chat_messages')
@@ -103,19 +106,21 @@ export async function POST(req: Request) {
     }
 
     // 3. Prepare full context for the AI
-    // We combine the DB history with the current message to ensure full context
-    // and avoid duplicates if the client already sent some history.
     const fullMessages = [
       ...history,
       { role: 'user', content: userContent }
-    ];
+    ].filter(m => m.content && typeof m.content === 'string' && m.content.trim().length > 0);
 
-    // Deduplicate history (just in case) by content/role if they are adjacent
+    // Deduplicate history (just in case)
     const deduplicatedMessages = fullMessages.filter((msg, idx, self) => {
       if (idx === 0) return true;
       const prev = self[idx - 1];
       return !(msg.role === prev.role && msg.content === prev.content);
     });
+
+    if (deduplicatedMessages.length === 0) {
+        throw new Error('No valid messages to send to AI');
+    }
 
     const systemPrompt = `
       You are OmniiAi, an advanced AI assistant developed by Sakibur Rahman.
@@ -126,7 +131,7 @@ export async function POST(req: Request) {
       3. Be professional and clear.
     `;
 
-    const convertedMessages = await convertToModelMessages(deduplicatedMessages);
+    const convertedMessages = await convertToModelMessages(deduplicatedMessages as any);
 
     const result = streamText({
       model: model,
@@ -161,7 +166,8 @@ export async function POST(req: Request) {
       JSON.stringify({ 
         error: 'Chat Error', 
         message: error.message || 'Something went wrong. Please try again.',
-        details: error.details || error.toString()
+        details: error.details || error.toString(),
+        stack: error.stack // Add stack trace for debugging
       }), 
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

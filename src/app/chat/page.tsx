@@ -258,10 +258,10 @@ export default function ChatPage() {
                     className="flex-1 overflow-y-auto px-8 py-12 space-y-8 custom-scrollbar scroll-smooth"
                 >
                     <div className="max-w-4xl mx-auto space-y-12">
-                        {messages.map((m) => {
+                        {messages?.map((m) => {
                             const messageText = m.parts
                                 ?.filter(p => p.type === 'text')
-                                .map(p => p.text)
+                                ?.map(p => p.text)
                                 .join('\n') || (m as any).content || '';
 
                             return (
