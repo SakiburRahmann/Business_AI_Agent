@@ -1,7 +1,6 @@
 import { model } from '@/lib/ai/client';
 import { streamText, convertToModelMessages } from 'ai';
 import { createClient } from '@/lib/supabase/server';
-import sql from '@/lib/db';
 
 export const maxDuration = 60;
 
@@ -22,34 +21,65 @@ export async function POST(req: Request) {
 
     let currentChatId = conversationId;
 
-    // 1. Ensure chat exists (Direct SQL)
+    // 1. Ensure chat exists
     if (currentChatId) {
-        const [existingChat] = await sql`
-            SELECT id FROM public.chats 
-            WHERE id = ${currentChatId} AND user_id = ${user.id}
-        `;
-        
-        if (!existingChat) {
-            await sql`
-                INSERT INTO public.chats (id, user_id, topic)
-                VALUES (${currentChatId}, ${user.id}, ${messages[messages.length - 1]?.content?.substring(0, 50) || 'New Chat'})
-            `;
-        }
+      const { data: existingChat } = await supabase
+        .from('chats')
+        .select('id')
+        .eq('id', currentChatId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (!existingChat) {
+        // Extract topic from the last user message
+        const lastUserMsg = messages.filter((m: any) => m.role === 'user').pop();
+        const topicText = lastUserMsg?.parts
+          ?.filter((p: any) => p.type === 'text')
+          .map((p: any) => p.text)
+          .join(' ') || lastUserMsg?.content || 'New Chat';
+
+        await supabase
+          .from('chats')
+          .insert({
+            id: currentChatId,
+            user_id: user.id,
+            topic: topicText.substring(0, 80),
+          });
+      }
     } else {
-        const [chat] = await sql`
-            INSERT INTO public.chats (user_id, topic)
-            VALUES (${user.id}, ${messages[messages.length - 1]?.content?.substring(0, 50) || 'New Chat'})
-            RETURNING id
-        `;
-        currentChatId = chat.id;
+      const lastUserMsg = messages.filter((m: any) => m.role === 'user').pop();
+      const topicText = lastUserMsg?.parts
+        ?.filter((p: any) => p.type === 'text')
+        .map((p: any) => p.text)
+        .join(' ') || lastUserMsg?.content || 'New Chat';
+
+      const { data: newChat } = await supabase
+        .from('chats')
+        .insert({
+          user_id: user.id,
+          topic: topicText.substring(0, 80),
+        })
+        .select('id')
+        .single();
+
+      currentChatId = newChat?.id;
     }
 
-    // 2. Save User Message (Direct SQL)
+    // 2. Save User Message
     const lastMessage = messages[messages.length - 1];
-    await sql`
-        INSERT INTO public.messages (chat_id, user_id, role, content)
-        VALUES (${currentChatId}, ${user.id}, 'user', ${lastMessage.content})
-    `;
+    const userContent = lastMessage.parts
+      ?.filter((p: any) => p.type === 'text')
+      .map((p: any) => p.text)
+      .join('\n') || lastMessage.content || '';
+
+    await supabase
+      .from('chat_messages')
+      .insert({
+        chat_id: currentChatId,
+        user_id: user.id,
+        role: 'user',
+        content: userContent,
+      });
 
     const systemPrompt = `
       You are OmniiAi, an advanced AI assistant developed by Sakibur Rahman.
@@ -67,25 +97,35 @@ export async function POST(req: Request) {
       system: systemPrompt,
       messages: convertedMessages,
       onFinish: async ({ text }) => {
-        // 3. Save Assistant Message on Finish (Direct SQL)
-        await sql`
-            INSERT INTO public.messages (chat_id, user_id, role, content)
-            VALUES (${currentChatId}, ${user.id}, 'assistant', ${text})
-        `;
+        // 3. Save Assistant Message on Finish
+        await supabase
+          .from('chat_messages')
+          .insert({
+            chat_id: currentChatId,
+            user_id: user.id,
+            role: 'assistant',
+            content: text,
+          });
+
+        // Update chat's updated_at timestamp
+        await supabase
+          .from('chats')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', currentChatId);
       }
     });
 
     return result.toUIMessageStreamResponse({
-        headers: {
-            'x-conversation-id': currentChatId
-        }
+      headers: {
+        'x-conversation-id': currentChatId
+      }
     });
   } catch (error: any) {
-    console.error('Chat API Error (Direct SQL):', error.message || error);
+    console.error('Chat API Error:', error.message || error);
     return new Response(
       JSON.stringify({ 
-        error: 'Database Error', 
-        message: 'A direct database connection issue occurred. Please try again.',
+        error: 'Chat Error', 
+        message: 'Something went wrong. Please try again.',
       }), 
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
