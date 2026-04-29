@@ -15,7 +15,7 @@ export default function DentalChatWidget() {
     transport: new DefaultChatTransport({
       api: "/api/dental-chat",
     }),
-    initialMessages: [
+    messages: [
       {
         id: "welcome",
         role: "assistant",
