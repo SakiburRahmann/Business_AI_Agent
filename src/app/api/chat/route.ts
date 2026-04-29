@@ -1,5 +1,5 @@
 import { model } from '@/lib/ai/client';
-import { streamText, convertToModelMessages } from 'ai';
+import { streamText } from 'ai';
 import { createClient } from '@/lib/supabase/server';
 
 export const maxDuration = 60;
@@ -131,12 +131,12 @@ export async function POST(req: Request) {
       3. Be professional and clear.
     `;
 
-    const convertedMessages = await convertToModelMessages(deduplicatedMessages as any);
-
+    // Pass messages directly to streamText as CoreMessage[] format
+    // streamText natively accepts { role: string, content: string }[]
     const result = streamText({
       model: model,
       system: systemPrompt,
-      messages: convertedMessages,
+      messages: deduplicatedMessages as any,
       onFinish: async ({ text }) => {
         // 4. Save Assistant Response
         await supabase
@@ -166,8 +166,6 @@ export async function POST(req: Request) {
       JSON.stringify({ 
         error: 'Chat Error', 
         message: error.message || 'Something went wrong. Please try again.',
-        details: error.details || error.toString(),
-        stack: error.stack // Add stack trace for debugging
       }), 
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
