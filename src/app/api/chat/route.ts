@@ -87,7 +87,7 @@ export async function POST(req: Request) {
 
     const userContent = lastMessage.content || 
                        lastMessage.text ||
-                       lastMessage.parts?.filter((p: any) => p.type === 'text').map((p: any) => p.text).join('\n') || 
+                       lastMessage.parts?.filter((p: any) => p.type === 'text')?.map((p: any) => p.text).join('\n') || 
                        '';
 
     if (userContent) {
