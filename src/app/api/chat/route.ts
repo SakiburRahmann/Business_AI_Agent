@@ -22,40 +22,55 @@ export async function POST(req: Request) {
     }
 
     let currentChatId = conversationId;
+    let history: any[] = [];
 
-    // 1. Ensure chat exists and belongs to the user
+    // 1. Resolve Chat Session and Fetch History
     if (currentChatId) {
-      const { data: existingChat, error: fetchError } = await supabase
+      // Check if chat exists and belongs to the user
+      const { data: existingChat } = await supabase
         .from('chats')
-        .select('id, topic')
+        .select('id')
         .eq('id', currentChatId)
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (!existingChat) {
-        // If it doesn't exist, create it with the provided ID
-        // Determine topic from current messages or default
-        const lastUserMsg = messages.find((m: any) => m.role === 'user');
-        const topicText = lastUserMsg?.content || lastUserMsg?.parts?.[0]?.text || 'New Chat';
+      if (existingChat) {
+        // Fetch previous messages for context
+        const { data: previousMessages } = await supabase
+          .from('chat_messages')
+          .select('role, content')
+          .eq('chat_id', currentChatId)
+          .order('created_at', { ascending: true });
+        
+        if (previousMessages) {
+          history = previousMessages.map(m => ({
+            role: m.role,
+            content: m.content
+          }));
+        }
+      } else {
+        // Create new chat with provided ID
+        const firstMsg = messages.find((m: any) => m.role === 'user');
+        const topic = firstMsg?.content || firstMsg?.text || firstMsg?.parts?.[0]?.text || 'New Chat';
         
         await supabase
           .from('chats')
           .insert({
             id: currentChatId,
             user_id: user.id,
-            topic: topicText.substring(0, 80),
+            topic: topic.substring(0, 80),
           });
       }
     } else {
-      // No ID provided, create a new chat record
-      const lastUserMsg = messages.find((m: any) => m.role === 'user');
-      const topicText = lastUserMsg?.content || lastUserMsg?.parts?.[0]?.text || 'New Chat';
+      // Generate new session if none provided
+      const firstMsg = messages.find((m: any) => m.role === 'user');
+      const topic = firstMsg?.content || firstMsg?.text || firstMsg?.parts?.[0]?.text || 'New Chat';
 
       const { data: newChat, error: insertError } = await supabase
         .from('chats')
         .insert({
           user_id: user.id,
-          topic: topicText.substring(0, 80),
+          topic: topic.substring(0, 80),
         })
         .select('id')
         .single();
@@ -66,12 +81,9 @@ export async function POST(req: Request) {
       currentChatId = newChat.id;
     }
 
-    // 2. Save the incoming message
+    // 2. Resolve the new message content
     const lastMessage = messages[messages.length - 1];
-    
-    if (!lastMessage) {
-      throw new Error('No messages found in request');
-    }
+    if (!lastMessage) throw new Error('No messages found');
 
     const userContent = lastMessage.content || 
                        lastMessage.text ||
@@ -79,6 +91,7 @@ export async function POST(req: Request) {
                        '';
 
     if (userContent) {
+      // Save to DB immediately
       await supabase
         .from('chat_messages')
         .insert({
@@ -89,6 +102,21 @@ export async function POST(req: Request) {
         });
     }
 
+    // 3. Prepare full context for the AI
+    // We combine the DB history with the current message to ensure full context
+    // and avoid duplicates if the client already sent some history.
+    const fullMessages = [
+      ...history,
+      { role: 'user', content: userContent }
+    ];
+
+    // Deduplicate history (just in case) by content/role if they are adjacent
+    const deduplicatedMessages = fullMessages.filter((msg, idx, self) => {
+      if (idx === 0) return true;
+      const prev = self[idx - 1];
+      return !(msg.role === prev.role && msg.content === prev.content);
+    });
+
     const systemPrompt = `
       You are OmniiAi, an advanced AI assistant developed by Sakibur Rahman.
       
@@ -98,14 +126,14 @@ export async function POST(req: Request) {
       3. Be professional and clear.
     `;
 
-    const convertedMessages = await convertToModelMessages(messages);
+    const convertedMessages = await convertToModelMessages(deduplicatedMessages);
 
     const result = streamText({
       model: model,
       system: systemPrompt,
       messages: convertedMessages,
       onFinish: async ({ text }) => {
-        // 3. Save Assistant Response
+        // 4. Save Assistant Response
         await supabase
           .from('chat_messages')
           .insert({
@@ -115,7 +143,6 @@ export async function POST(req: Request) {
             content: text,
           });
 
-        // Always update the updated_at timestamp to keep it at the top of history
         await supabase
           .from('chats')
           .update({ updated_at: new Date().toISOString() })
@@ -125,7 +152,7 @@ export async function POST(req: Request) {
 
     return result.toUIMessageStreamResponse({
       headers: {
-        'x-conversation-id': currentChatId
+        'x-conversation-id': currentChatId || '',
       }
     });
   } catch (error: any) {

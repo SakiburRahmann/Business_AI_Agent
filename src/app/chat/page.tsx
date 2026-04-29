@@ -14,14 +14,24 @@ export default function ChatPage() {
     const router = useRouter();
     const [isSidebarOpen, setSidebarOpen] = useState(true);
     const [inputValue, setInputValue] = useState('');
-    const [conversationId, setConversationId] = useState<string | null>(null);
-    const conversationIdRef = useRef<string | null>(null);
+    const [conversationId, setConversationId] = useState<string | null>(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('omniiai_current_conv_id');
+        }
+        return null;
+    });
+    const conversationIdRef = useRef<string | null>(conversationId);
     const [historicalConversations, setHistoricalConversations] = useState<any[]>([]);
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    // Sync ref with state
+    // Sync ref and localStorage with state
     useEffect(() => {
         conversationIdRef.current = conversationId;
+        if (conversationId) {
+            localStorage.setItem('omniiai_current_conv_id', conversationId);
+        } else {
+            localStorage.removeItem('omniiai_current_conv_id');
+        }
     }, [conversationId]);
     
     const { messages, setMessages, sendMessage, status, error } = useChat({
@@ -33,10 +43,14 @@ export default function ChatPage() {
                 const currentId = conversationIdRef.current;
                 if (currentId) {
                     // Send in headers
-                    init.headers = {
-                        ...init.headers,
-                        'x-conversation-id': currentId
-                    } as any;
+                    if (init.headers instanceof Headers) {
+                        init.headers.set('x-conversation-id', currentId);
+                    } else {
+                        init.headers = {
+                            ...init.headers,
+                            'x-conversation-id': currentId
+                        } as any;
+                    }
                     
                     // Also send in body if possible
                     if (init.body) {
@@ -45,7 +59,8 @@ export default function ChatPage() {
                             body.conversationId = currentId;
                             init.body = JSON.stringify(body);
                         } catch (e) {
-                            console.error('Failed to inject conversationId to body:', e);
+                            // If body is not JSON (e.g. FormData), we rely on the header
+                            console.warn('Could not inject conversationId to body, relying on header');
                         }
                     }
                 }
