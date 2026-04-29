@@ -278,7 +278,7 @@ export default function HomePage() {
               <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-12 bg-white rounded-[2.5rem] p-10 md:p-14 shadow-2xl">
                 <div>
                   <h3 className="text-sm font-bold mb-8 text-[#1e3a4f] uppercase tracking-widest flex items-center gap-2">
-                    <User className="w-4 h-4" /> Patient Information
+                    <Users className="w-4 h-4" /> Patient Information
                   </h3>
                   <div className="flex gap-8 mb-8">
                     <label className="flex items-center gap-2 cursor-pointer group">
