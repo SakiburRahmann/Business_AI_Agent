@@ -49,6 +49,7 @@ export default function ChatPage() {
             const res = await fetch(`/api/chat/history?conversationId=${id}`);
             if (res.ok) {
                 const data = await res.json();
+                // Map history to UIMessage format if needed, but the API already does it
                 setMessages(data);
             }
         } catch (err) {
@@ -81,11 +82,13 @@ export default function ChatPage() {
         }
 
         try {
-            await sendMessage({ 
-                parts: [{ type: 'text', text: contentSnapshot }],
+            // Use sendMessage with conversationId in the body
+            await (sendMessage as any)({ 
+                content: contentSnapshot,
                 conversationId: currentId
-            } as any);
+            });
             
+            // Refresh list after a short delay
             setTimeout(loadConversationList, 2000);
         } catch (err) {
             console.error('Connection Error:', err);
