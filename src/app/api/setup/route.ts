@@ -4,11 +4,12 @@ import { NextResponse } from "next/server";
 export async function GET() {
   const password = process.env.SUPABASE_DB_PASSWORD || "IAmTheMan!20040113!";
   
-  // Try connecting via IPv6 address directly since Vercel has IPv6
+  // pg library often needs IPv6 in brackets if passed as host
   const ipv6 = "2406:da1a:6b0:f62a:7b89:758d:199e:8257";
   
   const attempts = [
     { host: ipv6, port: 5432, user: "postgres" },
+    { host: `[${ipv6}]`, port: 5432, user: "postgres" },
     { host: "db.lwgziphajgqjkwqpfdop.supabase.co", port: 5432, user: "postgres" },
   ];
 
