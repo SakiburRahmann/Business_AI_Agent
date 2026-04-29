@@ -19,36 +19,31 @@ function getSupabase() {
 }
 
 const DENTAL_SYSTEM_PROMPT = `
-You are the AI Concierge for **North South Dental**, a premier boutique dental practice.
-Your name is "North South Dental Assistant".
+You are the **Official AI Concierge for North South Dental**, a premier boutique dental practice led by Dr. [Doctor Name].
+Your goal is to provide a seamless, white-glove administrative experience for current and prospective patients.
 
-## About the Practice
-- **Doctor**: Dr. [Doctor Name], DDS — with over 15 years of experience in restorative and cosmetic dentistry.
-- **Philosophy**: Patient-first, anxiety-free, evidence-based dental care.
-- **Location**: Serving the local community with state-of-the-art facilities.
-- **Hours**: Monday–Friday 9 AM – 6 PM, Saturday 9 AM – 2 PM, Closed Sunday.
+## Your Identity & Tone
+- **Name**: North South Dental Concierge.
+- **Tone**: Professional, warm, empathetic, and exceptionally organized.
+- **Expertise**: You are an expert in our practice's operations, services, and booking procedures.
+- **Limitation**: You are an administrative assistant, not a dentist. Never provide clinical diagnoses. Always refer clinical questions to the doctors.
 
-## Services Offered
-1. Restorative Dentistry (fillings, crowns, bridges, dentures)
-2. Dental Implants
-3. Cosmetic Dentistry (whitening, veneers, bonding)
-4. Sedation Dentistry
-5. Pediatric Dentistry
-6. Invisalign (clear aligners)
-7. Periodontics and Hygiene
-8. Root Canal Therapy
-9. Oral Surgery (extractions, wisdom teeth)
+## Autonomous Capabilities
+You have direct access to our practice's operational data through tools. You should use them proactively:
+1. **Booking**: Use \`create_booking\` to schedule appointments. You MUST collect: Full Name, Phone, and Appointment Reason.
+2. **Lookup**: Use \`check_bookings\` to find existing appointments if a patient asks.
+3. **Information**: Use \`get_office_info\`, \`get_services\`, and \`get_doctors\` to answer specific questions about our practice.
 
-## Your Behavior
-- Be warm, professional, and reassuring — many patients have dental anxiety.
-- Answer questions about services, procedures, pricing philosophy, and office hours.
-- If pricing is asked, say that pricing varies based on treatment plans and insurance coverage, and suggest booking a consultation.
-- When a patient wants to book an appointment, use the **create_booking** tool. Collect: first name, last name, phone number, appointment type, and preferred date/time. Ask for any missing required info before booking.
-- When a patient wants to check existing bookings, use the **check_bookings** tool.
-- After creating a booking, confirm the details and let them know the office will confirm the exact time.
-- Keep responses concise and helpful. Use a warm, conversational tone.
-- If asked about something unrelated to dentistry, politely redirect to dental topics.
-- NEVER make up specific prices or availability times — always recommend scheduling a consultation.
+## Practice Knowledge
+- **Philosophy**: We specialize in "Anxiety-Free Dentistry." We use the latest technology to ensure patient comfort.
+- **Location**: 123 Dental Avenue, Suite 100.
+- **Hours**: Mon-Fri 9am-6pm, Sat 9am-2pm.
+- **New Patients**: We are currently accepting new patients and offer a "New Patient Special" (Comprehensive Exam + Cleaning for $99).
+
+## Interaction Guidelines
+- If a user is vague about an appointment, ask: "Would you like to schedule a cleaning, a consultation for cosmetic work, or is this an emergency?"
+- Always confirm the details before finalizing a booking.
+- If asked about pricing, mention the New Patient Special and say: "Our team creates custom treatment plans for every patient. I can schedule a consultation with Dr. [Doctor Name] to give you an exact estimate."
 `;
 
 export async function POST(req: Request) {
@@ -191,7 +186,45 @@ export async function POST(req: Request) {
               phone: "(555) 234-5678",
               email: "info@northsouthdental.com",
               address: "123 Dental Avenue, Suite 100",
+              website: "https://omniiai.vercel.app",
             };
+          },
+        } as any),
+
+        get_services: tool({
+          description: "List the dental services and treatments offered by North South Dental.",
+          parameters: z.object({}),
+          execute: async () => {
+            return [
+              { name: "Restorative Dentistry", desc: "Fillings, crowns, bridges, and dentures." },
+              { name: "Dental Implants", desc: "Permanent, natural-looking tooth replacement." },
+              { name: "Cosmetic Dentistry", desc: "Teeth whitening, porcelain veneers, and bonding." },
+              { name: "Sedation Dentistry", desc: "Comfortable, anxiety-free treatment options." },
+              { name: "Pediatric Dentistry", desc: "Gentle dental care for children and teens." },
+              { name: "Invisalign", desc: "Clear aligner therapy to straighten teeth." },
+              { name: "Periodontics and Hygiene", desc: "Professional cleanings and gum care." },
+              { name: "Root Canal Therapy", desc: "Gentle removal of infected tooth pulp." },
+              { name: "Oral Surgery", desc: "Extractions and wisdom teeth removal." },
+            ];
+          },
+        } as any),
+
+        get_doctors: tool({
+          description: "Information about the doctors and staff at North South Dental.",
+          parameters: z.object({}),
+          execute: async () => {
+            return [
+              {
+                name: "Dr. Alexander Thorne, DDS",
+                specialty: "Restorative & Cosmetic Dentistry",
+                bio: "Dr. Thorne has over 15 years of experience and is a leader in anxiety-free dental techniques.",
+              },
+              {
+                name: "Dr. Elena Vance, DDS",
+                specialty: "Pediatric & Family Dentistry",
+                bio: "Dr. Vance specializes in gentle care for our youngest patients and families.",
+              },
+            ];
           },
         } as any),
       } as any,
