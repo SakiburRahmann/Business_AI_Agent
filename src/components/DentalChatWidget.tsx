@@ -2,40 +2,34 @@
 
 import { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send, Loader2, Bot, User } from "lucide-react";
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+
+interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+}
 
 export default function DentalChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: "welcome",
+      role: "assistant",
+      content:
+        "Hello! 👋 I'm the North South Dental Concierge. I can help you book appointments, answer questions about our services and doctors, or check your booking status. How can I help you today?",
+    },
+  ]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const { messages, sendMessage, status, error } = useChat({
-    transport: new DefaultChatTransport({
-      api: "/api/dental-chat",
-    }),
-    messages: [
-      {
-        id: "welcome",
-        role: "assistant",
-        parts: [
-          {
-            type: "text",
-            text: "Hello! 👋 I'm the North South Dental Concierge. I can help you book appointments, answer questions about our services and doctors, or check your booking status. How can I help you today?",
-          },
-        ],
-      } as any,
-    ],
-  });
-
-  const isLoading = status === "streaming" || status === "submitted";
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, errorMsg]);
 
   useEffect(() => {
     if (isOpen && inputRef.current) {
@@ -47,25 +41,109 @@ export default function DentalChatWidget() {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
 
-    const text = inputValue.trim();
+    const userText = inputValue.trim();
     setInputValue("");
+    setErrorMsg(null);
+
+    // Add user message
+    const userMsg: ChatMessage = {
+      id: Date.now().toString(),
+      role: "user",
+      content: userText,
+    };
+    const updatedMessages = [...messages, userMsg];
+    setMessages(updatedMessages);
+    setIsLoading(true);
+
+    // Prepare API messages (exclude welcome message)
+    const apiMessages = updatedMessages
+      .filter((m) => m.id !== "welcome")
+      .map((m) => ({ role: m.role, content: m.content }));
 
     try {
-      await sendMessage({ text });
-    } catch (err) {
-      console.error("Dental chat error:", err);
-    }
-  };
+      const res = await fetch("/api/dental-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: apiMessages }),
+      });
 
-  // Extract text content from a message (handles both parts[] and content string)
-  const getMessageText = (m: any): string => {
-    if (m.parts && Array.isArray(m.parts)) {
-      return m.parts
-        .filter((p: any) => p.type === "text")
-        .map((p: any) => p.text)
-        .join("\n");
+      if (!res.ok) {
+        const errBody = await res.text();
+        throw new Error(`API ${res.status}: ${errBody.substring(0, 200)}`);
+      }
+
+      if (!res.body) {
+        throw new Error("No response body received");
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantContent = "";
+      const assistantId = (Date.now() + 1).toString();
+
+      // Add empty assistant message for streaming
+      setMessages((prev) => [
+        ...prev,
+        { id: assistantId, role: "assistant", content: "" },
+      ]);
+
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || ""; // Keep incomplete line in buffer
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith("data: ")) continue;
+
+          const jsonStr = trimmed.slice(6); // Remove "data: "
+          if (jsonStr === "[DONE]") continue;
+
+          try {
+            const event = JSON.parse(jsonStr);
+
+            // Extract text content from the stream
+            if (event.type === "text-delta" && event.delta) {
+              assistantContent += event.delta;
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === assistantId
+                    ? { ...m, content: assistantContent }
+                    : m
+                )
+              );
+            }
+          } catch {
+            // Skip unparseable lines silently
+          }
+        }
+      }
+
+      // If no text was extracted (edge case), show a fallback
+      if (!assistantContent.trim()) {
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantId && !m.content.trim()
+              ? {
+                  ...m,
+                  content:
+                    "I've processed your request. Is there anything else I can help you with?",
+                }
+              : m
+          )
+        );
+      }
+    } catch (err: any) {
+      console.error("Dental chat error:", err);
+      setErrorMsg(err?.message || "Unknown error");
+    } finally {
+      setIsLoading(false);
     }
-    return m.content || "";
   };
 
   return (
@@ -127,42 +205,41 @@ export default function DentalChatWidget() {
               scrollbarColor: "rgba(90,122,106,0.15) transparent",
             }}
           >
-            {messages?.map((m: any) => {
-              const text = getMessageText(m);
-              if (!text && m.role === "assistant") return null; // skip empty tool-only messages
-
-              return (
+            {messages.map((m) => (
+              <div
+                key={m.id}
+                className={`flex gap-2.5 ${
+                  m.role === "user" ? "flex-row-reverse" : "flex-row"
+                }`}
+              >
                 <div
-                  key={m.id}
-                  className={`flex gap-2.5 ${
-                    m.role === "user" ? "flex-row-reverse" : "flex-row"
+                  className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                    m.role === "user"
+                      ? "bg-[#1e3a4f]"
+                      : "bg-gradient-to-br from-[#5a7a6a] to-[#3d5a4d]"
                   }`}
                 >
-                  <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
-                      m.role === "user"
-                        ? "bg-[#1e3a4f]"
-                        : "bg-gradient-to-br from-[#5a7a6a] to-[#3d5a4d]"
-                    }`}
-                  >
-                    {m.role === "user" ? (
-                      <User className="w-3.5 h-3.5 text-white" />
-                    ) : (
-                      <Bot className="w-3.5 h-3.5 text-white" />
-                    )}
-                  </div>
-                  <div
-                    className={`max-w-[75%] px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
-                      m.role === "user"
-                        ? "bg-[#1e3a4f] text-white rounded-2xl rounded-tr-md"
-                        : "bg-white text-[#2c3e50] rounded-2xl rounded-tl-md border border-[#e8e4de] shadow-sm"
-                    }`}
-                  >
-                    {text}
-                  </div>
+                  {m.role === "user" ? (
+                    <User className="w-3.5 h-3.5 text-white" />
+                  ) : (
+                    <Bot className="w-3.5 h-3.5 text-white" />
+                  )}
                 </div>
-              );
-            })}
+                <div
+                  className={`max-w-[75%] px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+                    m.role === "user"
+                      ? "bg-[#1e3a4f] text-white rounded-2xl rounded-tr-md"
+                      : "bg-white text-[#2c3e50] rounded-2xl rounded-tl-md border border-[#e8e4de] shadow-sm"
+                  }`}
+                >
+                  {m.content || (
+                    <span className="flex items-center gap-2 text-[#9ba8b6]">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Thinking...
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
 
             {/* Loading indicator */}
             {isLoading &&
@@ -190,18 +267,27 @@ export default function DentalChatWidget() {
                 </div>
               )}
 
-            {/* Error display */}
-            {error && (
-              <div className="p-3 rounded-lg bg-red-50 text-xs text-red-600 text-center border border-red-100">
-                Something went wrong. Please try again or call us at (555)
-                234-5678.
+            {/* Error display - shows exact error for debugging */}
+            {errorMsg && (
+              <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700">
+                <p className="font-semibold mb-1">⚠️ Error Details:</p>
+                <p className="font-mono text-[10px] break-all">{errorMsg}</p>
+                <button
+                  onClick={() => setErrorMsg(null)}
+                  className="mt-2 text-red-500 underline text-[10px]"
+                >
+                  Dismiss
+                </button>
               </div>
             )}
           </div>
 
           {/* Input */}
           <div className="px-4 py-3 bg-white border-t border-[#e8e4de]">
-            <form onSubmit={handleFormSubmit} className="flex items-center gap-2">
+            <form
+              onSubmit={handleFormSubmit}
+              className="flex items-center gap-2"
+            >
               <input
                 ref={inputRef}
                 type="text"
