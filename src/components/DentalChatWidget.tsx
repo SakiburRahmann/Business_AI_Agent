@@ -3,23 +3,31 @@
 import { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send, Loader2, Bot, User } from "lucide-react";
 import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 
 export default function DentalChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
+  const [inputValue, setInputValue] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [inputValue, setInputValue] = useState("");
-  const { messages, setMessages, sendMessage, status, error } = useChat({
-    api: "/api/dental-chat",
+  const { messages, sendMessage, status, error } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/dental-chat",
+    }),
     initialMessages: [
       {
         id: "welcome",
         role: "assistant",
-        parts: [{ type: "text", text: "Hello! 👋 I'm the North South Dental AI Assistant. I can help you book appointments, answer questions about our services, or check your booking status. How can I help you today?" }],
+        parts: [
+          {
+            type: "text",
+            text: "Hello! 👋 I'm the North South Dental Concierge. I can help you book appointments, answer questions about our services and doctors, or check your booking status. How can I help you today?",
+          },
+        ],
       } as any,
     ],
-  } as any);
+  });
 
   const isLoading = status === "streaming" || status === "submitted";
 
@@ -39,14 +47,25 @@ export default function DentalChatWidget() {
     e.preventDefault();
     if (!inputValue.trim() || isLoading) return;
 
-    const content = inputValue;
+    const text = inputValue.trim();
     setInputValue("");
 
     try {
-      await (sendMessage as any)({ text: content });
+      await sendMessage({ text });
     } catch (err) {
-      console.error("Chat error:", err);
+      console.error("Dental chat error:", err);
     }
+  };
+
+  // Extract text content from a message (handles both parts[] and content string)
+  const getMessageText = (m: any): string => {
+    if (m.parts && Array.isArray(m.parts)) {
+      return m.parts
+        .filter((p: any) => p.type === "text")
+        .map((p: any) => p.text)
+        .join("\n");
+    }
+    return m.content || "";
   };
 
   return (
@@ -66,7 +85,6 @@ export default function DentalChatWidget() {
         ) : (
           <>
             <MessageCircle className="w-7 h-7 text-white" />
-            {/* Pulse ring */}
             <span className="absolute inset-0 rounded-full bg-[#5a7a6a] animate-ping opacity-20" />
           </>
         )}
@@ -80,7 +98,10 @@ export default function DentalChatWidget() {
             : "opacity-0 translate-y-4 scale-95 pointer-events-none"
         }`}
       >
-        <div className="bg-white rounded-2xl shadow-2xl border border-[#e8e4de] overflow-hidden flex flex-col" style={{ height: "550px" }}>
+        <div
+          className="bg-white rounded-2xl shadow-2xl border border-[#e8e4de] overflow-hidden flex flex-col"
+          style={{ height: "550px" }}
+        >
           {/* Header */}
           <div className="bg-gradient-to-r from-[#1e3a4f] to-[#2c5a6f] px-5 py-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-sm">
@@ -88,10 +109,10 @@ export default function DentalChatWidget() {
             </div>
             <div className="flex-1">
               <h3 className="text-white text-sm font-bold">
-                AI Dental Assistant
+                North South Dental Concierge
               </h3>
               <p className="text-white/60 text-[10px] font-medium uppercase tracking-widest">
-                North South Dental • Online
+                AI-Powered • Online
               </p>
             </div>
             <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse" />
@@ -100,13 +121,15 @@ export default function DentalChatWidget() {
           {/* Messages */}
           <div
             ref={scrollRef}
-            className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#fdfbf7] custom-scrollbar"
+            className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#fdfbf7]"
+            style={{
+              scrollbarWidth: "thin",
+              scrollbarColor: "rgba(90,122,106,0.15) transparent",
+            }}
           >
             {messages?.map((m: any) => {
-              const messageText = m.parts
-                ?.filter((p: any) => p.type === 'text')
-                ?.map((p: any) => p.text)
-                .join('\n') || m.content || '';
+              const text = getMessageText(m);
+              if (!text && m.role === "assistant") return null; // skip empty tool-only messages
 
               return (
                 <div
@@ -129,50 +152,62 @@ export default function DentalChatWidget() {
                     )}
                   </div>
                   <div
-                    className={`max-w-[75%] px-4 py-3 text-sm leading-relaxed ${
+                    className={`max-w-[75%] px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
                       m.role === "user"
                         ? "bg-[#1e3a4f] text-white rounded-2xl rounded-tr-md"
                         : "bg-white text-[#2c3e50] rounded-2xl rounded-tl-md border border-[#e8e4de] shadow-sm"
                     }`}
                   >
-                    {messageText}
+                    {text}
                   </div>
                 </div>
               );
             })}
-            {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
-              <div className="flex gap-2.5">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#5a7a6a] to-[#3d5a4d] flex items-center justify-center">
-                  <Bot className="w-3.5 h-3.5 text-white" />
-                </div>
-                <div className="bg-white px-4 py-3 rounded-2xl rounded-tl-md border border-[#e8e4de] shadow-sm">
-                  <div className="flex gap-1.5">
-                    <span className="w-2 h-2 bg-[#5a7a6a] rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-2 h-2 bg-[#5a7a6a] rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-2 h-2 bg-[#5a7a6a] rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+
+            {/* Loading indicator */}
+            {isLoading &&
+              messages[messages.length - 1]?.role !== "assistant" && (
+                <div className="flex gap-2.5">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#5a7a6a] to-[#3d5a4d] flex items-center justify-center">
+                    <Bot className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <div className="bg-white px-4 py-3 rounded-2xl rounded-tl-md border border-[#e8e4de] shadow-sm">
+                    <div className="flex gap-1.5">
+                      <span
+                        className="w-2 h-2 bg-[#5a7a6a] rounded-full animate-bounce"
+                        style={{ animationDelay: "0ms" }}
+                      />
+                      <span
+                        className="w-2 h-2 bg-[#5a7a6a] rounded-full animate-bounce"
+                        style={{ animationDelay: "150ms" }}
+                      />
+                      <span
+                        className="w-2 h-2 bg-[#5a7a6a] rounded-full animate-bounce"
+                        style={{ animationDelay: "300ms" }}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+
+            {/* Error display */}
             {error && (
-              <div className="p-2 rounded bg-red-50 text-[10px] text-red-500 text-center">
-                Error: {error.message || "Failed to send message"}
+              <div className="p-3 rounded-lg bg-red-50 text-xs text-red-600 text-center border border-red-100">
+                Something went wrong. Please try again or call us at (555)
+                234-5678.
               </div>
             )}
           </div>
 
           {/* Input */}
           <div className="px-4 py-3 bg-white border-t border-[#e8e4de]">
-            <form
-              onSubmit={handleFormSubmit}
-              className="flex items-center gap-2"
-            >
+            <form onSubmit={handleFormSubmit} className="flex items-center gap-2">
               <input
                 ref={inputRef}
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Ask about our services..."
+                placeholder="Ask about services, book an appointment..."
                 className="flex-1 bg-[#f8fafb] border border-[#e8e4de] rounded-xl px-4 py-3 text-sm text-[#2c3e50] placeholder:text-[#9ba8b6] focus:outline-none focus:border-[#5a7a6a] focus:ring-1 focus:ring-[#5a7a6a]/20 transition-all"
                 disabled={isLoading}
               />
@@ -194,22 +229,6 @@ export default function DentalChatWidget() {
           </div>
         </div>
       </div>
-
-      <style jsx global>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(90, 122, 106, 0.1);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(90, 122, 106, 0.2);
-        }
-      `}</style>
     </>
   );
 }
