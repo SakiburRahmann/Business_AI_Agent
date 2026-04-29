@@ -98,6 +98,10 @@ export async function POST(req: Request) {
               .describe("Any additional notes or concerns from the patient"),
           }),
           execute: async (params: any) => {
+            if (!params.first_name || !params.last_name || !params.phone) {
+              return "Error: Missing required information. Please ask the user for their first name, last name, and phone number before booking the appointment.";
+            }
+
             const supabase = getSupabase();
             const { data, error } = await supabase
               .from("dental_bookings")

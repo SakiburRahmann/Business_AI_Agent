@@ -126,12 +126,12 @@ export default function AdminDashboard() {
                     <tr key={booking.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#f0f7fc] flex items-center justify-center text-[#1e3a4f] text-xs font-bold">
-                            {booking.first_name[0]}{booking.last_name[0]}
+                          <div className="w-8 h-8 rounded-full bg-[#f0f7fc] flex items-center justify-center text-[#1e3a4f] text-xs font-bold uppercase">
+                            {(booking.first_name?.[0] || '') + (booking.last_name?.[0] || '') || '?'}
                           </div>
                           <div>
-                            <div className="text-sm font-bold text-[#2c3e50]">{booking.first_name} {booking.last_name}</div>
-                            <div className="text-xs text-[#6b7b8d]">{booking.phone}</div>
+                            <div className="text-sm font-bold text-[#2c3e50]">{booking.first_name || 'Unknown'} {booking.last_name || ''}</div>
+                            <div className="text-xs text-[#6b7b8d]">{booking.phone || 'No phone provided'}</div>
                           </div>
                         </div>
                       </td>
