@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Phone, Mail, MapPin, Clock, ChevronDown, Users, CheckCircle2, Star, Sparkles } from "lucide-react";
+import DentalChatWidget from "@/components/DentalChatWidget";
 
 const services = [
   { name: "Restorative Dentistry", desc: "Fillings, crowns, bridges, and dentures to restore damaged or missing teeth to their natural function and appearance." },
@@ -454,6 +455,9 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {/* AI Chat Widget */}
+      <DentalChatWidget />
     </div>
   );
 }
