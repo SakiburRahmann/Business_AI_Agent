@@ -1,24 +1,24 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Outfit } from "next/font/google";
+import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
-const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
+const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfair" });
 
 export const metadata: Metadata = {
-  title: "OmniiChat 1.0 | Pure Intelligence",
-  description: "Experience the next generation of AI conversational architecture. Sub-100ms streaming latency, high-fidelity design.",
-  keywords: ["AI", "Chat", "OmniiChat", "Gemini", "Next.js", "Sakibur Rahman"],
-  authors: [{ name: "Sakibur Rahman" }],
+  title: "North South Dental | Comprehensive Dental Care",
+  description: "North South Dental provides quality dental care including general dentistry, cosmetic procedures, orthodontics, and emergency services. Serving patients of all ages.",
+  keywords: ["Dental", "Dentist", "North South Dental", "Dental Care", "Teeth Cleaning", "Dental Implants"],
+  authors: [{ name: "North South Dental" }],
   openGraph: {
-    title: "OmniiChat 1.0",
-    description: "AI Conversational Masterpiece",
+    title: "North South Dental",
+    description: "Comprehensive Dental Care for Patients of All Ages",
     type: "website",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#020202",
+  themeColor: "#ffffff",
   width: "device-width",
   initialScale: 1,
 };
@@ -29,9 +29,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <body
-        className={`${inter.variable} ${outfit.variable} antialiased bg-[#020202] text-zinc-100 selection:bg-purple-500/30 selection:text-white`}
+        className={`${inter.variable} ${playfair.variable} antialiased`}
       >
         {children}
       </body>

@@ -3,12 +3,17 @@
 
 @theme {
   --font-inter: var(--font-inter), ui-sans-serif, system-ui;
-  --font-outfit: var(--font-outfit), ui-sans-serif, system-ui;
+  --font-playfair: var(--font-playfair), Georgia, serif;
+  --color-primary: #1a5276;
+  --color-primary-light: #2980b9;
+  --color-primary-dark: #0e3a55;
+  --color-accent: #27ae60;
+  --color-accent-light: #2ecc71;
 }
 
 :root {
-  --background: #020202;
-  --foreground: #f4f4f5;
+  --background: #ffffff;
+  --foreground: #1a1a2e;
 }
 
 body {
@@ -17,25 +22,30 @@ body {
   font-family: var(--font-inter);
 }
 
-/* Custom Scrollbar for High-Fidelity UI */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #050505;
+  background: #f1f1f1;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #18181b;
+  background: #c0c0c0;
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #27272a;
+  background: #a0a0a0;
 }
 
-/* Base Typographic Standards */
+/* Base Typography */
 h1, h2, h3, h4 {
-  font-family: var(--font-outfit);
+  font-family: var(--font-playfair);
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
 }
