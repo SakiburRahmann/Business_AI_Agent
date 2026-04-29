@@ -7,18 +7,11 @@ const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-playfa
 
 export const metadata: Metadata = {
   title: "North South Dental | Comprehensive Dental Care",
-  description: "North South Dental provides quality dental care including general dentistry, cosmetic procedures, orthodontics, and emergency services. Serving patients of all ages.",
-  keywords: ["Dental", "Dentist", "North South Dental", "Dental Care", "Teeth Cleaning", "Dental Implants"],
-  authors: [{ name: "North South Dental" }],
-  openGraph: {
-    title: "North South Dental",
-    description: "Comprehensive Dental Care for Patients of All Ages",
-    type: "website",
-  },
+  description: "North South Dental provides gentle, comprehensive dental care for patients of all ages. Book your appointment today.",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#ffffff",
+  themeColor: "#fdfbf7",
   width: "device-width",
   initialScale: 1,
 };
@@ -29,10 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${inter.variable} ${playfair.variable} antialiased`}
-      >
+    <html lang="en" className="scroll-smooth">
+      <body className={`${inter.variable} ${playfair.variable} antialiased`}>
         {children}
       </body>
     </html>
