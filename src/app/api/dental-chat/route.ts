@@ -1,5 +1,5 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { streamText, tool } from "ai";
+import { streamText, tool, stepCountIs } from "ai";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
@@ -228,6 +228,7 @@ export async function POST(req: Request) {
           },
         } as any),
       } as any,
+      stopWhen: stepCountIs(5),
     });
 
     return result.toUIMessageStreamResponse();
