@@ -66,7 +66,13 @@ export async function POST(req: Request) {
 
     // 2. Save the incoming message
     const lastMessage = messages[messages.length - 1];
+    
+    if (!lastMessage) {
+      throw new Error('No messages found in request');
+    }
+
     const userContent = lastMessage.content || 
+                       lastMessage.text ||
                        lastMessage.parts?.filter((p: any) => p.type === 'text').map((p: any) => p.text).join('\n') || 
                        '';
 
@@ -121,11 +127,12 @@ export async function POST(req: Request) {
       }
     });
   } catch (error: any) {
-    console.error('Chat API Error:', error.message || error);
+    console.error('Chat API Error:', error);
     return new Response(
       JSON.stringify({ 
         error: 'Chat Error', 
-        message: 'Something went wrong. Please try again.',
+        message: error.message || 'Something went wrong. Please try again.',
+        details: error.details || error.toString()
       }), 
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );

@@ -3,7 +3,7 @@
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { DefaultChatMessages } from '@/lib/ai/client';
-import { Send, Loader2, Sparkles, User, Bot, LogOut, ChevronRight, PlusCircle, MessageSquare } from 'lucide-react';
+import { Loader2, Send, Plus, MessageSquare, LogOut, Trash2, Sparkles, User, Bot, ChevronRight } from "lucide-react";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { cn } from '@/lib/utils';
@@ -49,11 +49,27 @@ export default function ChatPage() {
             const res = await fetch(`/api/chat/history?conversationId=${id}`);
             if (res.ok) {
                 const data = await res.json();
-                // Map history to UIMessage format if needed, but the API already does it
                 setMessages(data);
             }
         } catch (err) {
             console.error('Failed to load messages:', err);
+        }
+    };
+
+    const deleteConversation = async (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        if (!confirm('Are you sure you want to delete this chat?')) return;
+
+        try {
+            const res = await fetch(`/api/chats/delete?id=${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                if (conversationId === id) {
+                    startNewChat();
+                }
+                loadConversationList();
+            }
+        } catch (err) {
+            console.error('Failed to delete chat:', err);
         }
     };
 
@@ -82,13 +98,11 @@ export default function ChatPage() {
         }
 
         try {
-            // Use sendMessage with conversationId in the body
             await (sendMessage as any)({ 
-                content: contentSnapshot,
+                text: contentSnapshot,
                 conversationId: currentId
             });
             
-            // Refresh list after a short delay
             setTimeout(loadConversationList, 2000);
         } catch (err) {
             console.error('Connection Error:', err);
@@ -121,7 +135,7 @@ export default function ChatPage() {
                         onClick={startNewChat}
                         className="w-full flex items-center gap-3 p-4 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all group"
                     >
-                        <PlusCircle className="w-4 h-4" />
+                        <Plus className="w-4 h-4" />
                         <span className="text-xs font-bold uppercase tracking-widest">New Chat</span>
                     </button>
                 </div>
@@ -129,21 +143,31 @@ export default function ChatPage() {
                 <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar">
                     <p className="px-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">History</p>
                     {historicalConversations.map((conv) => (
-                        <button 
+                        <div 
                             key={conv.id}
                             onClick={() => loadConversation(conv.id)}
                             className={cn(
-                                "w-full text-left p-4 rounded-xl transition-all group border",
+                                "group relative flex items-center gap-3 rounded-xl p-3 cursor-pointer transition-all duration-300 border",
                                 conversationId === conv.id 
                                     ? "bg-white/[0.05] border-white/[0.1] text-white" 
                                     : "bg-transparent border-transparent text-zinc-500 hover:bg-white/[0.03] hover:text-zinc-300"
                             )}
                         >
-                            <div className="flex items-center gap-3">
-                                <MessageSquare className="w-4 h-4 shrink-0" />
-                                <p className="text-sm font-medium truncate">{conv.topic || 'Untitled Chat'}</p>
-                            </div>
-                        </button>
+                            <MessageSquare className={cn(
+                                "w-4 h-4 shrink-0 transition-colors",
+                                conversationId === conv.id ? "text-purple-400" : "text-zinc-500"
+                            )} />
+                            <span className="flex-1 text-sm font-medium truncate">
+                                {conv.topic || 'Untitled Chat'}
+                            </span>
+                            
+                            <button
+                                onClick={(e) => deleteConversation(e, conv.id)}
+                                className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-red-500/10 text-zinc-500 hover:text-red-400 transition-all"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
                     ))}
                     {historicalConversations.length === 0 && (
                         <div className="p-8 text-center border border-dashed border-white/5 rounded-2xl">
