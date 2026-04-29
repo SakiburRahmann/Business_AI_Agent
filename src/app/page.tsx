@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Phone, Mail, MapPin, Clock, ChevronDown, Users } from "lucide-react";
+import { Phone, Mail, MapPin, Clock, ChevronDown, Users, CheckCircle2, Star, Sparkles } from "lucide-react";
 
 const services = [
   { name: "Restorative Dentistry", desc: "Fillings, crowns, bridges, and dentures to restore damaged or missing teeth to their natural function and appearance." },
@@ -24,6 +24,28 @@ export default function HomePage() {
     appointmentType: "", datePreference: "", dayPreference: [] as string[],
     timePreference: "", notes: "",
   });
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+      if (res.ok) {
+        setSubmitSuccess(true);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const toggleDay = (day: string) => {
     setFormData(prev => ({
@@ -55,7 +77,7 @@ export default function HomePage() {
               (800) 555-1234
             </a>
             <Link href="#book" className="px-5 py-2.5 border-2 border-[#3d5a4d] text-[#3d5a4d] text-sm font-medium hover:bg-[#3d5a4d] hover:text-white transition-all rounded">
-              Book an Appointment
+              Book Now
             </Link>
           </div>
         </div>
@@ -63,354 +85,372 @@ export default function HomePage() {
 
       <main>
         {/* Hero */}
-        <section className="pt-32 pb-16 px-6">
-          <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-12">
+        <section className="pt-40 pb-20 px-6">
+          <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-16">
             <div className="flex-1">
-              <h1 className="text-4xl md:text-5xl lg:text-[3.5rem] font-bold text-[#3d5a4d] leading-tight mb-6 font-[family-name:var(--font-playfair)]">
-                Gentle &amp; comprehensive dental care.
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#5a7a6a]/10 text-[#5a7a6a] text-[10px] font-bold uppercase tracking-widest mb-6">
+                <Sparkles className="w-3 h-3" /> Now Accepting New Patients
+              </div>
+              <h1 className="text-4xl md:text-5xl lg:text-[4rem] font-bold text-[#3d5a4d] leading-[1.1] mb-8 font-[family-name:var(--font-playfair)]">
+                Experience the Art of Gentle Dentistry.
               </h1>
-              <p className="text-lg text-[#6b7b8d] leading-relaxed mb-8 max-w-lg">
-                We are here to help you maintain a beautiful and healthy smile. Your oral health plays a major role in your overall well-being, and at North South Dental, we provide personalized treatment with your comfort and satisfaction in mind.
+              <p className="text-lg text-[#6b7b8d] leading-relaxed mb-10 max-w-xl">
+                At North South Dental, we blend clinical excellence with a boutique patient experience. Our mission is to provide transparent, compassionate care tailored to your unique smile.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="#book" className="px-8 py-3.5 bg-[#5a7a6a] text-white text-sm font-medium hover:bg-[#3d5a4d] transition-colors rounded text-center">
-                  Book an Appointment Online
+                <Link href="#book" className="px-8 py-4 bg-[#5a7a6a] text-white text-sm font-bold hover:bg-[#3d5a4d] transition-all rounded shadow-lg shadow-[#5a7a6a]/20 text-center">
+                  Request Appointment
                 </Link>
-                <a href="tel:+18005551234" className="px-8 py-3.5 border border-[#e8e4de] text-[#3d5a4d] text-sm font-medium hover:border-[#3d5a4d] transition-colors rounded text-center">
-                  or call us at (800) 555-1234
-                </a>
+                <Link href="#services" className="px-8 py-4 border border-[#e8e4de] text-[#3d5a4d] text-sm font-bold hover:border-[#3d5a4d] transition-all rounded text-center">
+                  Our Services
+                </Link>
               </div>
             </div>
-            <div className="flex-1 flex justify-center">
-              <div className="w-full max-w-md aspect-[4/3] rounded-2xl bg-gradient-to-br from-[#5a7a6a]/20 to-[#5a7a6a]/5 border border-[#e8e4de] flex items-center justify-center">
-                <div className="text-center">
-                  <div className="text-6xl mb-2">🦷</div>
-                  <p className="text-sm text-[#6b7b8d]">North South Dental</p>
+            <div className="flex-1 relative">
+              <div className="w-full aspect-[4/5] rounded-[2rem] bg-[#f7f4ef] border border-[#e8e4de] overflow-hidden flex items-center justify-center relative z-10">
+                <div className="text-center p-12">
+                   <div className="w-20 h-20 bg-white rounded-2xl shadow-xl flex items-center justify-center mx-auto mb-6 transform -rotate-6">
+                      <Sparkles className="w-10 h-10 text-[#5a7a6a]" />
+                   </div>
+                   <h3 className="text-2xl font-bold text-[#3d5a4d] mb-4 font-[family-name:var(--font-playfair)]">State-of-the-Art Care</h3>
+                   <p className="text-sm text-[#6b7b8d] leading-relaxed">Modern technology meets personalized attention in the heart of the Medical District.</p>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Contact Strip */}
-        <section className="py-6 px-6 bg-[#f7f4ef] border-y border-[#e8e4de]">
-          <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-6 flex-wrap justify-center">
-              <span className="flex items-center gap-2 text-sm text-[#6b7b8d]"><Phone className="w-4 h-4 text-[#5a7a6a]" /> (800) 555-1234</span>
-              <span className="flex items-center gap-2 text-sm text-[#6b7b8d]"><Mail className="w-4 h-4 text-[#5a7a6a]" /> hello@northsouthdental.com</span>
-              <span className="flex items-center gap-2 text-sm text-[#6b7b8d]"><MapPin className="w-4 h-4 text-[#5a7a6a]" /> 123 Healthcare Blvd, Suite 200</span>
+              <div className="absolute -bottom-6 -right-6 w-48 h-48 bg-[#5a7a6a]/10 rounded-full blur-3xl -z-0"></div>
+              <div className="absolute -top-6 -left-6 w-48 h-48 bg-[#1e3a4f]/5 rounded-full blur-3xl -z-0"></div>
             </div>
           </div>
         </section>
 
         {/* Philosophy */}
-        <section id="about" className="py-20 px-6">
+        <section id="about" className="py-24 px-6 bg-white border-y border-[#e8e4de]">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-[#3d5a4d] mb-10 font-[family-name:var(--font-playfair)]">Our Philosophy</h2>
-            <div className="flex gap-8 mb-8 flex-wrap">
-              {["Transparency", "Compassion", "Science-Based", "Collaboration"].map((v) => (
-                <span key={v} className="text-sm font-semibold text-[#5a7a6a] border-b-2 border-[#5a7a6a] pb-1">{v}</span>
-              ))}
+            <h2 className="text-3xl md:text-4xl font-bold text-[#3d5a4d] mb-12 font-[family-name:var(--font-playfair)]">Our Philosophy</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <div>
+                <p className="text-[#6b7b8d] leading-relaxed mb-6 italic text-lg font-[family-name:var(--font-playfair)]">
+                  "Dentistry is not just about teeth; it's about people. We believe in transparency and empowering our patients through education."
+                </p>
+                <div className="flex flex-wrap gap-3">
+                   {["Transparency", "Compassion", "Science-Based", "Collaboration"].map(tag => (
+                     <span key={tag} className="px-3 py-1 bg-[#f7f4ef] border border-[#e8e4de] text-[10px] font-bold uppercase tracking-wider text-[#5a7a6a] rounded">{tag}</span>
+                   ))}
+                </div>
+              </div>
+              <div className="text-[#6b7b8d] space-y-4 text-sm leading-relaxed">
+                <p>
+                  Dentistry can be intimidating when procedures aren't explained. At North South Dental, we prioritize transparent conversation. We approach diagnosis by carefully considering your concerns and history, then building a plan around your personal goals.
+                </p>
+                <p>
+                  Our goal is to provide compassionate, honest, and collaborative care to ensure the best possible experience during every visit.
+                </p>
+              </div>
             </div>
-            <p className="text-[#6b7b8d] leading-relaxed mb-4">
-              Dentistry can be intimidating as often procedures and steps are not explained to patients. We at North South Dental believe in transparent conversation and in educating patients about their oral health. We approach diagnosis by carefully collecting and considering your concerns and dental history, and then developing a treatment plan according to your personal goals.
-            </p>
-            <p className="text-[#6b7b8d] leading-relaxed">
-              We take a comprehensive approach in treating your oral health as part of your overall health. Our goal is to provide compassionate, honest, scientific, and collaborative care to ensure the best possible dental experience during your visit.
-            </p>
           </div>
         </section>
 
         {/* Doctor Bio */}
-        <section className="py-20 px-6 bg-[#f7f4ef] border-y border-[#e8e4de]">
+        <section className="py-24 px-6 bg-[#f7f4ef]">
           <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-[#3d5a4d] mb-10 font-[family-name:var(--font-playfair)]">About Dr. Sarah Mitchell</h2>
-            <div className="flex flex-col md:flex-row gap-10">
-              <div className="w-48 h-60 rounded-xl bg-[#5a7a6a]/10 border border-[#e8e4de] flex items-center justify-center flex-shrink-0 mx-auto md:mx-0">
-                <Users className="w-16 h-16 text-[#5a7a6a]/50" />
+            <div className="flex flex-col md:flex-row gap-16 items-center">
+              <div className="w-64 h-80 rounded-2xl bg-white border border-[#e8e4de] p-4 shadow-xl rotate-2 flex-shrink-0">
+                <div className="w-full h-full bg-[#5a7a6a]/5 rounded-xl flex items-center justify-center">
+                   <Users className="w-16 h-16 text-[#5a7a6a]/20" />
+                </div>
               </div>
               <div>
-                <p className="text-[#6b7b8d] leading-relaxed mb-4">
-                  Dr. Sarah Mitchell is a graduate of Columbia University College of Dental Medicine, where she received her Doctorate of Dental Surgery in 2012. She completed her general practice residency at Mount Sinai Hospital, where she earned her certificate in sedation dentistry.
-                </p>
-                <p className="text-[#6b7b8d] leading-relaxed mb-4">
-                  During her residency, she volunteered weekly at a community dental clinic for underserved populations, where she gained the skills necessary for treating a medically and behaviorally complex patient population. These experiences shaped her patient-first approach to dental care.
-                </p>
-                <p className="text-[#6b7b8d] leading-relaxed">
-                  Dr. Mitchell is a member of the American Dental Association, the Academy of General Dentistry, and the American Academy of Cosmetic Dentistry. She regularly attends continuing education courses to stay current with the latest techniques and technologies.
-                </p>
+                <h2 className="text-3xl md:text-4xl font-bold text-[#3d5a4d] mb-6 font-[family-name:var(--font-playfair)]">Dr. Sarah Mitchell</h2>
+                <p className="text-sm text-[#5a7a6a] font-bold uppercase tracking-[0.2em] mb-6">Principal Dentist & Founder</p>
+                <div className="text-[#6b7b8d] space-y-4 text-sm leading-relaxed">
+                  <p>
+                    Dr. Mitchell graduated from Columbia University College of Dental Medicine and completed her residency at Mount Sinai Hospital. She is certified in sedation dentistry and has a passion for treating complex cases with a patient-first approach.
+                  </p>
+                  <p>
+                    She gained extensive experience at community clinics, which shaped her philosophy of making high-quality dental care accessible and comfortable for everyone.
+                  </p>
+                  <div className="pt-4 flex gap-8">
+                     <div>
+                       <p className="text-[#3d5a4d] font-bold">12+</p>
+                       <p className="text-[10px] text-[#6b7b8d] uppercase tracking-wider">Years Experience</p>
+                     </div>
+                     <div>
+                       <p className="text-[#3d5a4d] font-bold">5000+</p>
+                       <p className="text-[10px] text-[#6b7b8d] uppercase tracking-wider">Patients Served</p>
+                     </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
         {/* Services */}
-        <section id="services" className="py-20 px-6">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold text-[#3d5a4d] mb-4 font-[family-name:var(--font-playfair)]">Services</h2>
-            <p className="text-[#6b7b8d] leading-relaxed mb-10">
-              We are committed to helping you have a comforting experience at our dental practice. At North South Dental, you can expect personalized treatments with your satisfaction in mind. We practice science-based dentistry and pride ourselves on educating our patients so they can make the best decision for their oral care.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <section id="services" className="py-24 px-6">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl md:text-4xl font-bold text-[#3d5a4d] mb-4 font-[family-name:var(--font-playfair)]">Bespoke Services</h2>
+              <p className="text-[#6b7b8d] max-w-2xl mx-auto text-sm">Personalized treatments from preventive care to advanced cosmetic transformations.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {services.map((s, i) => (
-                <div key={i} className="border border-[#e8e4de] rounded-lg overflow-hidden">
-                  <button
-                    onClick={() => setOpenService(openService === i ? null : i)}
-                    className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-[#f7f4ef] transition-colors"
-                  >
-                    <span className="text-[#3d5a4d] font-semibold">{s.name}</span>
-                    <ChevronDown className={`w-5 h-5 text-[#6b7b8d] transition-transform duration-300 ${openService === i ? "rotate-180" : ""}`} />
-                  </button>
-                  {openService === i && (
-                    <div className="px-6 pb-4 text-sm text-[#6b7b8d] leading-relaxed border-t border-[#e8e4de] pt-3">
-                      {s.desc}
-                    </div>
-                  )}
+                <div key={i} className="group border border-[#e8e4de] rounded-2xl p-8 hover:bg-[#f7f4ef] hover:border-[#5a7a6a]/30 transition-all cursor-pointer">
+                  <h3 className="text-[#3d5a4d] font-bold mb-4 font-[family-name:var(--font-playfair)] group-hover:text-[#5a7a6a] transition-colors">{s.name}</h3>
+                  <p className="text-xs text-[#6b7b8d] leading-relaxed line-clamp-3">{s.desc}</p>
+                  <div className="mt-6 flex items-center gap-2 text-[#5a7a6a] opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span className="text-[10px] font-bold uppercase tracking-widest">Learn More</span>
+                    <ChevronDown className="w-3 h-3 -rotate-90" />
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Booking Form */}
-        <section id="book" className="py-20 px-6 bg-[#1e3a4f] text-white">
-          <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-10">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-2 font-[family-name:var(--font-playfair)]">NORTH SOUTH DENTAL</h2>
-              <p className="text-blue-200">Thank you for taking the time to make an appointment at our office.</p>
+        {/* Technology Section */}
+        <section className="py-24 px-6 bg-[#1e3a4f] text-white">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6 font-[family-name:var(--font-playfair)]">Modern Technology</h2>
+            <p className="text-blue-100/70 mb-12 max-w-xl mx-auto text-sm">We use the latest diagnostic and treatment tools to ensure your visit is efficient and painless.</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+              {[
+                { title: "Digital Imaging", desc: "Lower radiation and instant results for precise diagnosis." },
+                { title: "Intraoral Scanning", desc: "No messy goop. Precise 3D models for crowns and Invisalign." },
+                { title: "Laser Care", desc: "Minimally invasive treatments for faster healing times." }
+              ].map((t, i) => (
+                <div key={i}>
+                  <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mx-auto mb-6">
+                    <Sparkles className="w-6 h-6 text-blue-200" />
+                  </div>
+                  <h4 className="font-bold mb-2 font-[family-name:var(--font-playfair)]">{t.title}</h4>
+                  <p className="text-xs text-blue-100/60 leading-relaxed">{t.desc}</p>
+                </div>
+              ))}
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 bg-white text-[#2c3e50] rounded-xl p-8 md:p-10">
-              {/* Left: Patient Info */}
-              <div>
-                <h3 className="text-lg font-bold mb-6 text-[#1e3a4f] uppercase tracking-wider text-sm">This Appointment Is For</h3>
-                <div className="flex gap-6 mb-6">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="patientType" value="new" checked={formData.patientType === "new"} onChange={e => setFormData({...formData, patientType: e.target.value})} className="accent-[#1e3a4f]" />
-                    <span className="text-sm">New patient</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="patientType" value="existing" checked={formData.patientType === "existing"} onChange={e => setFormData({...formData, patientType: e.target.value})} className="accent-[#1e3a4f]" />
-                    <span className="text-sm">Existing patient</span>
-                  </label>
-                </div>
-                {[
-                  { label: "First name", key: "firstName", type: "text" },
-                  { label: "Last name", key: "lastName", type: "text" },
-                  { label: "Date of birth", key: "dob", type: "date" },
-                  { label: "Email", key: "email", type: "email" },
-                  { label: "Telephone", key: "phone", type: "tel" },
-                ].map(field => (
-                  <div key={field.key} className="mb-4">
-                    <label className="block text-xs text-[#6b7b8d] mb-1">{field.label}</label>
-                    <input
-                      type={field.type}
-                      value={formData[field.key as keyof typeof formData] as string}
-                      onChange={e => setFormData({...formData, [field.key]: e.target.value})}
-                      className="w-full border border-[#e8e4de] rounded px-3 py-2.5 text-sm focus:outline-none focus:border-[#5a7a6a] transition-colors"
-                    />
-                  </div>
-                ))}
-                <div className="mb-4">
-                  <label className="block text-xs text-[#6b7b8d] mb-1">Notes to Office</label>
-                  <textarea
-                    value={formData.notes}
-                    onChange={e => setFormData({...formData, notes: e.target.value})}
-                    rows={3}
-                    className="w-full border border-[#e8e4de] rounded px-3 py-2.5 text-sm focus:outline-none focus:border-[#5a7a6a] transition-colors resize-none"
-                  />
-                </div>
-              </div>
+          </div>
+        </section>
 
-              {/* Right: Preferences */}
-              <div>
-                <h3 className="text-lg font-bold mb-6 text-[#1e3a4f] uppercase tracking-wider text-sm">Please Indicate Your Preferences</h3>
-                <div className="mb-4">
-                  <label className="block text-xs text-[#6b7b8d] mb-1">Appointment type</label>
-                  <select
-                    value={formData.appointmentType}
-                    onChange={e => setFormData({...formData, appointmentType: e.target.value})}
-                    className="w-full border border-[#e8e4de] rounded px-3 py-2.5 text-sm focus:outline-none focus:border-[#5a7a6a] bg-white"
-                  >
-                    <option value="">Please select one...</option>
-                    <option>General Checkup</option>
-                    <option>Cleaning</option>
-                    <option>Cosmetic Consultation</option>
-                    <option>Emergency</option>
-                    <option>Implant Consultation</option>
-                    <option>Orthodontics Consultation</option>
-                  </select>
-                </div>
-                <div className="mb-4">
-                  <label className="block text-xs text-[#6b7b8d] mb-1">Date preference</label>
-                  <input
-                    type="date"
-                    value={formData.datePreference}
-                    onChange={e => setFormData({...formData, datePreference: e.target.value})}
-                    className="w-full border border-[#e8e4de] rounded px-3 py-2.5 text-sm focus:outline-none focus:border-[#5a7a6a]"
-                  />
-                </div>
-                <div className="mb-6">
-                  <label className="block text-xs text-[#6b7b8d] mb-2">Day preference (You can select more than one)</label>
-                  <div className="flex flex-wrap gap-2">
-                    {["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map(day => (
-                      <button
-                        key={day}
-                        type="button"
-                        onClick={() => toggleDay(day)}
-                        className={`px-4 py-2 rounded text-xs font-semibold transition-colors ${
-                          formData.dayPreference.includes(day)
-                            ? "bg-[#2980b9] text-white"
-                            : "bg-[#f0f0f0] text-[#6b7b8d] hover:bg-[#e0e0e0]"
-                        }`}
-                      >
-                        {day}
-                      </button>
-                    ))}
-                    <span className="flex items-center text-xs text-[#6b7b8d] px-2">OR</span>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({...formData, dayPreference: ["ASAP"]})}
-                      className={`px-4 py-2 rounded text-xs font-semibold transition-colors ${
-                        formData.dayPreference.includes("ASAP")
-                          ? "bg-[#2980b9] text-white"
-                          : "bg-[#f0f0f0] text-[#6b7b8d] hover:bg-[#e0e0e0]"
-                      }`}
-                    >
-                      ASAP
-                    </button>
+        {/* Testimonials */}
+        <section className="py-24 px-6 bg-[#fdfbf7]">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-3xl font-bold text-[#3d5a4d] mb-12 text-center font-[family-name:var(--font-playfair)]">Patient Experiences</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {[
+                { name: "Emily Robinson", text: "The most gentle cleaning I've ever had. Dr. Mitchell and her staff really take the time to explain everything. I actually look forward to the dentist now!" },
+                { name: "Michael Chen", text: "Stunning office and top-tier technology. The 3D scanning made my Invisalign process so much easier than I expected." }
+              ].map((t, i) => (
+                <div key={i} className="p-10 bg-white rounded-3xl border border-[#e8e4de] shadow-sm relative">
+                  <div className="flex gap-1 mb-6">
+                    {[...Array(5)].map((_, i) => <Star key={i} className="w-3 h-3 fill-[#5a7a6a] text-[#5a7a6a]" />)}
                   </div>
+                  <p className="text-[#6b7b8d] italic text-sm mb-6 leading-relaxed">\"{t.text}\"</p>
+                  <p className="text-[#3d5a4d] font-bold text-[10px] uppercase tracking-[0.2em]">— {t.name}</p>
                 </div>
-                <div className="mb-8">
-                  <label className="block text-xs text-[#6b7b8d] mb-2">Time preference</label>
-                  <div className="flex gap-3">
-                    {["MORNING", "AFTERNOON", "ANY TIME"].map(t => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => setFormData({...formData, timePreference: t})}
-                        className={`flex-1 py-2.5 rounded text-xs font-semibold transition-colors ${
-                          formData.timePreference === t
-                            ? "bg-[#5a7a6a] text-white"
-                            : "bg-[#f0f0f0] text-[#6b7b8d] hover:bg-[#e0e0e0]"
-                        }`}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Manual Booking Form */}
+        <section id="book" className="py-24 px-6 bg-[#1e3a4f]">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 font-[family-name:var(--font-playfair)]">Reserve Your Visit</h2>
+              <p className="text-blue-200/70 text-sm">Please fill out the traditional booking request form below.</p>
+            </div>
+            
+            {submitSuccess ? (
+              <div className="bg-white rounded-[2rem] p-16 text-center shadow-2xl">
+                <div className="w-20 h-20 bg-[#eafaf1] text-[#27ae60] rounded-full flex items-center justify-center mx-auto mb-8">
+                  <CheckCircle2 className="w-10 h-10" />
                 </div>
-                <button
-                  type="button"
-                  className="w-full py-3.5 bg-[#2980b9] text-white font-semibold rounded hover:bg-[#2471a3] transition-colors text-sm"
+                <h3 className="text-2xl font-bold mb-4 text-[#1e3a4f] font-[family-name:var(--font-playfair)]">Request Received</h3>
+                <p className="text-[#6b7b8d] max-w-md mx-auto mb-10 text-sm">
+                  Thank you. Your appointment request has been logged. Our staff will review your preferences and contact you shortly.
+                </p>
+                <button 
+                  onClick={() => setSubmitSuccess(false)}
+                  className="px-10 py-4 bg-[#1e3a4f] text-white rounded-xl font-bold hover:bg-[#152a39] transition-all shadow-xl"
                 >
-                  VIEW AVAILABLE APPOINTMENTS
+                  Make Another Request
                 </button>
               </div>
-            </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-12 bg-white rounded-[2.5rem] p-10 md:p-14 shadow-2xl">
+                <div>
+                  <h3 className="text-sm font-bold mb-8 text-[#1e3a4f] uppercase tracking-widest flex items-center gap-2">
+                    <User className="w-4 h-4" /> Patient Information
+                  </h3>
+                  <div className="flex gap-8 mb-8">
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <input type="radio" name="patientType" value="new" checked={formData.patientType === "new"} onChange={e => setFormData({...formData, patientType: e.target.value})} className="accent-[#5a7a6a] w-4 h-4" required />
+                      <span className="text-sm text-[#6b7b8d] group-hover:text-[#3d5a4d]">New patient</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer group">
+                      <input type="radio" name="patientType" value="existing" checked={formData.patientType === "existing"} onChange={e => setFormData({...formData, patientType: e.target.value})} className="accent-[#5a7a6a] w-4 h-4" />
+                      <span className="text-sm text-[#6b7b8d] group-hover:text-[#3d5a4d]">Existing patient</span>
+                    </label>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { label: "First name", key: "firstName", type: "text" },
+                      { label: "Last name", key: "lastName", type: "text" },
+                    ].map(field => (
+                      <div key={field.key} className="mb-4">
+                        <label className="block text-[10px] font-bold text-[#6b7b8d] uppercase tracking-wider mb-2">{field.label}</label>
+                        <input type={field.type} required value={formData[field.key as keyof typeof formData] as string} onChange={e => setFormData({...formData, [field.key]: e.target.value})} className="w-full bg-[#f8fafb] border border-[#e8e4de] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#5a7a6a] transition-all" />
+                      </div>
+                    ))}
+                  </div>
+                  {[
+                    { label: "Date of birth", key: "dob", type: "date" },
+                    { label: "Email address", key: "email", type: "email" },
+                    { label: "Telephone", key: "phone", type: "tel" },
+                  ].map(field => (
+                    <div key={field.key} className="mb-4">
+                      <label className="block text-[10px] font-bold text-[#6b7b8d] uppercase tracking-wider mb-2">{field.label}</label>
+                      <input type={field.type} required value={formData[field.key as keyof typeof formData] as string} onChange={e => setFormData({...formData, [field.key]: e.target.value})} className="w-full bg-[#f8fafb] border border-[#e8e4de] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#5a7a6a] transition-all" />
+                    </div>
+                  ))}
+                </div>
+
+                <div>
+                  <h3 className="text-sm font-bold mb-8 text-[#1e3a4f] uppercase tracking-widest flex items-center gap-2">
+                    <Clock className="w-4 h-4" /> Visit Preferences
+                  </h3>
+                  <div className="mb-6">
+                    <label className="block text-[10px] font-bold text-[#6b7b8d] uppercase tracking-wider mb-2">Service Required</label>
+                    <select required value={formData.appointmentType} onChange={e => setFormData({...formData, appointmentType: e.target.value})} className="w-full bg-[#f8fafb] border border-[#e8e4de] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#5a7a6a] transition-all appearance-none">
+                      <option value="">Select a service...</option>
+                      <option>General Checkup</option>
+                      <option>Professional Cleaning</option>
+                      <option>Cosmetic Consultation</option>
+                      <option>Emergency Care</option>
+                      <option>Implant Consultation</option>
+                      <option>Invisalign Assessment</option>
+                    </select>
+                  </div>
+                  <div className="mb-6">
+                    <label className="block text-[10px] font-bold text-[#6b7b8d] uppercase tracking-wider mb-2">Preferred Date</label>
+                    <input type="date" required value={formData.datePreference} onChange={e => setFormData({...formData, datePreference: e.target.value})} className="w-full bg-[#f8fafb] border border-[#e8e4de] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#5a7a6a]" />
+                  </div>
+                  <div className="mb-8">
+                    <label className="block text-[10px] font-bold text-[#6b7b8d] uppercase tracking-wider mb-3">Time of Day</label>
+                    <div className="flex gap-3">
+                      {["MORNING", "AFTERNOON", "ANY"].map(t => (
+                        <button key={t} type="button" onClick={() => setFormData({...formData, timePreference: t})} className={`flex-1 py-3 rounded-xl text-[10px] font-bold transition-all border ${formData.timePreference === t ? "bg-[#1e3a4f] text-white border-[#1e3a4f]" : "bg-white text-[#6b7b8d] border-[#e8e4de] hover:border-[#5a7a6a]"}`}>
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mb-8">
+                    <label className="block text-[10px] font-bold text-[#6b7b8d] uppercase tracking-wider mb-2">Notes for Staff</label>
+                    <textarea value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})} rows={3} className="w-full bg-[#f8fafb] border border-[#e8e4de] rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-[#5a7a6a] transition-all resize-none placeholder:text-gray-300" placeholder="Special requirements or concerns..." />
+                  </div>
+                  <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-[#5a7a6a] text-white font-bold rounded-2xl hover:bg-[#3d5a4d] disabled:opacity-50 transition-all text-xs uppercase tracking-[0.2em] shadow-xl shadow-[#5a7a6a]/20">
+                    {isSubmitting ? "Submitting..." : "Send Request"}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </section>
 
-        {/* Office Hours */}
-        <section className="py-16 px-6 bg-[#f7f4ef] border-y border-[#e8e4de]">
-          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12">
+        {/* Office & Contact */}
+        <section id="contact" className="py-24 px-6 bg-white">
+          <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20">
             <div>
-              <h2 className="text-2xl font-bold text-[#3d5a4d] mb-6 font-[family-name:var(--font-playfair)]">Office Hours</h2>
-              <div className="space-y-3">
-                {[
-                  { day: "Monday – Friday", time: "8:00 AM – 6:00 PM" },
-                  { day: "Saturday", time: "9:00 AM – 2:00 PM" },
-                  { day: "Sunday", time: "Closed" },
-                ].map((h, i) => (
-                  <div key={i} className="flex justify-between py-2 border-b border-[#e8e4de] text-sm">
-                    <span className="text-[#3d5a4d] font-medium">{h.day}</span>
-                    <span className="text-[#6b7b8d]">{h.time}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold text-[#3d5a4d] mb-6 font-[family-name:var(--font-playfair)]">Insurance and Payment</h2>
-              <p className="text-sm text-[#6b7b8d] leading-relaxed mb-3">
-                We accept most major dental insurance plans. Our team will help verify your coverage and explain any out-of-pocket costs before treatment begins.
-              </p>
-              <p className="text-sm text-[#6b7b8d] leading-relaxed">
-                For patients without insurance, we offer flexible payment plans and accept all major credit cards. We believe cost should never be a barrier to quality dental care.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* Contact */}
-        <section id="contact" className="py-16 px-6">
-          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12">
-            <div>
-              <h2 className="text-2xl font-bold text-[#3d5a4d] mb-6 font-[family-name:var(--font-playfair)]">Contact Us</h2>
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <Phone className="w-5 h-5 text-[#5a7a6a] mt-0.5" />
-                  <div>
-                    <a href="tel:+18005551234" className="text-[#3d5a4d] font-medium hover:underline">(800) 555-1234</a>
-                    <p className="text-xs text-[#6b7b8d] mt-0.5">Main line</p>
-                  </div>
+              <h2 className="text-3xl font-bold text-[#3d5a4d] mb-10 font-[family-name:var(--font-playfair)]">Visit Our Studio</h2>
+              <div className="space-y-8">
+                <div className="flex items-start gap-6">
+                   <div className="w-12 h-12 rounded-2xl bg-[#f7f4ef] flex items-center justify-center text-[#5a7a6a] flex-shrink-0">
+                      <MapPin className="w-6 h-6" />
+                   </div>
+                   <div>
+                      <p className="text-sm font-bold text-[#3d5a4d] mb-1">Our Location</p>
+                      <p className="text-sm text-[#6b7b8d] leading-relaxed">123 Healthcare Boulevard, Suite 200<br/>Medical District, Cityside</p>
+                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <Mail className="w-5 h-5 text-[#5a7a6a] mt-0.5" />
-                  <a href="mailto:hello@northsouthdental.com" className="text-[#3d5a4d] font-medium hover:underline">hello@northsouthdental.com</a>
+                <div className="flex items-start gap-6">
+                   <div className="w-12 h-12 rounded-2xl bg-[#f7f4ef] flex items-center justify-center text-[#5a7a6a] flex-shrink-0">
+                      <Clock className="w-6 h-6" />
+                   </div>
+                   <div>
+                      <p className="text-sm font-bold text-[#3d5a4d] mb-1">Office Hours</p>
+                      <div className="grid grid-cols-2 gap-x-8 text-sm text-[#6b7b8d]">
+                         <span>Mon – Fri</span><span>8:00 AM – 6:00 PM</span>
+                         <span>Saturday</span><span>9:00 AM – 2:00 PM</span>
+                         <span>Sunday</span><span>Closed</span>
+                      </div>
+                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-[#5a7a6a] mt-0.5" />
-                  <div>
-                    <p className="text-[#3d5a4d] font-medium">123 Healthcare Boulevard, Suite 200</p>
-                    <p className="text-xs text-[#6b7b8d] mt-0.5">Medical District</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Clock className="w-5 h-5 text-[#5a7a6a] mt-0.5" />
-                  <div>
-                    <p className="text-[#3d5a4d] font-medium">Mon–Fri: 8AM–6PM</p>
-                    <p className="text-xs text-[#6b7b8d] mt-0.5">Sat: 9AM–2PM | Sun: Closed</p>
-                  </div>
+                <div className="flex items-start gap-6">
+                   <div className="w-12 h-12 rounded-2xl bg-[#f7f4ef] flex items-center justify-center text-[#5a7a6a] flex-shrink-0">
+                      <Phone className="w-6 h-6" />
+                   </div>
+                   <div>
+                      <p className="text-sm font-bold text-[#3d5a4d] mb-1">Get in Touch</p>
+                      <p className="text-sm text-[#6b7b8d]">(800) 555-1234</p>
+                      <p className="text-sm text-[#6b7b8d]">hello@northsouthdental.com</p>
+                   </div>
                 </div>
               </div>
             </div>
-            <div className="w-full h-64 md:h-auto rounded-xl bg-[#f7f4ef] border border-[#e8e4de] flex items-center justify-center">
-              <div className="text-center text-[#6b7b8d]">
-                <MapPin className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">Map</p>
-              </div>
+            <div className="w-full h-80 lg:h-auto rounded-[2.5rem] bg-[#f7f4ef] border border-[#e8e4de] flex items-center justify-center shadow-inner overflow-hidden relative group">
+               <div className="absolute inset-0 bg-[#5a7a6a]/5 group-hover:bg-transparent transition-colors"></div>
+               <div className="text-center relative z-10">
+                  <div className="w-16 h-16 bg-white rounded-2xl shadow-lg flex items-center justify-center mx-auto mb-4">
+                     <MapPin className="w-8 h-8 text-[#5a7a6a]" />
+                  </div>
+                  <p className="text-xs font-bold text-[#6b7b8d] uppercase tracking-widest">View Map</p>
+               </div>
             </div>
           </div>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="py-10 px-6 bg-[#2c3e50] text-white">
+      <footer className="py-16 px-6 bg-[#2c3e50] text-white">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <span className="text-lg font-bold font-[family-name:var(--font-playfair)]">North South</span>
-              <span className="block text-[10px] uppercase tracking-[0.3em] text-gray-400">Dental Care</span>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+            <div className="col-span-1 md:col-span-1">
+              <span className="text-2xl font-bold font-[family-name:var(--font-playfair)]">North South</span>
+              <span className="block text-[10px] uppercase tracking-[0.4em] text-gray-400 mt-1">Dental Care</span>
+              <p className="mt-6 text-xs text-gray-400 leading-relaxed max-w-xs">
+                Providing comprehensive dental excellence with a human-centric approach in a modern boutique environment.
+              </p>
             </div>
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Contact Us</h4>
-              <p className="text-sm text-gray-300">(800) 555-1234</p>
-              <p className="text-sm text-gray-300">hello@northsouthdental.com</p>
+              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 mb-6">Quick Links</h4>
+              <ul className="space-y-4 text-sm text-gray-300">
+                 <li><Link href="#about" className="hover:text-white transition-colors">Philosophy</Link></li>
+                 <li><Link href="#services" className="hover:text-white transition-colors">Services</Link></li>
+                 <li><Link href="#book" className="hover:text-white transition-colors">Book Visit</Link></li>
+                 <li><Link href="#" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+              </ul>
             </div>
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Find Us On</h4>
-              <p className="text-sm text-gray-300 hover:text-white cursor-pointer">Facebook</p>
-              <p className="text-sm text-gray-300 hover:text-white cursor-pointer">Google Maps</p>
+              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 mb-6">Connect</h4>
+              <ul className="space-y-4 text-sm text-gray-300">
+                 <li><span className="hover:text-white cursor-pointer transition-colors">Instagram</span></li>
+                 <li><span className="hover:text-white cursor-pointer transition-colors">Facebook</span></li>
+                 <li><span className="hover:text-white cursor-pointer transition-colors">Google Maps</span></li>
+              </ul>
             </div>
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">Quick Links</h4>
-              <Link href="#about" className="block text-sm text-gray-300 hover:text-white">About</Link>
-              <Link href="#services" className="block text-sm text-gray-300 hover:text-white">Services</Link>
-              <Link href="#book" className="block text-sm text-gray-300 hover:text-white">Book an Appointment</Link>
-              <Link href="#" className="block text-sm text-gray-300 hover:text-white">Privacy Policy</Link>
+              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 mb-6">Location</h4>
+              <p className="text-sm text-gray-300 mb-2">123 Healthcare Blvd</p>
+              <p className="text-sm text-gray-300 mb-6">Medical District, Suite 200</p>
+              <p className="text-sm text-gray-300 font-bold">(800) 555-1234</p>
             </div>
           </div>
-          <div className="border-t border-white/10 pt-6 text-center text-xs text-gray-500">
-            © 2026 North South Dental. All rights reserved.
+          <div className="border-t border-white/10 pt-10 flex flex-col md:flex-row justify-between items-center gap-6">
+            <p className="text-[10px] text-gray-500 uppercase tracking-widest">© 2026 North South Dental. Excellence in Care.</p>
+            <div className="flex gap-8 text-[10px] text-gray-500 uppercase tracking-widest">
+               <span>Terms</span>
+               <span>Privacy</span>
+               <span>ADA Accessible</span>
+            </div>
           </div>
         </div>
       </footer>
